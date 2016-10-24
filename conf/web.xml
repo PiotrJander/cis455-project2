@@ -15,12 +15,29 @@
      <servlet-name>xpath</servlet-name>
      <servlet-class>edu.upenn.cis455.servlet.XPathServlet</servlet-class> 
    </servlet>
-    
+   <servlet>
+     <servlet-name>auth</servlet-name>
+     <servlet-class>edu.upenn.cis455.servlet.AuthServlet</servlet-class>
+   </servlet>
+   <servlet>
+     <servlet-name>logout</servlet-name>
+     <servlet-class>edu.upenn.cis455.servlet.LogoutServlet</servlet-class>
+   </servlet>
+
    <servlet-mapping>
      <servlet-name>xpath</servlet-name>
      <url-pattern>/xpath</url-pattern>
-   </servlet-mapping>  
+   </servlet-mapping>
 
-   <!-- add any additional servlets and servlet mappings here -->
+   <servlet-mapping>
+     <servlet-name>auth</servlet-name>
+     <url-pattern>/register.jsp</url-pattern>
+   </servlet-mapping>
+
+
+   <servlet-mapping>
+     <servlet-name>logout</servlet-name>
+     <url-pattern>/logout</url-pattern>
+   </servlet-mapping>
 
 </web-app>
