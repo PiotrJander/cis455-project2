@@ -44,8 +44,8 @@ public class DBWrapper {
         dao.userByUsername.put(new User(username, password));
     }
 
-    public static String getUserPassword(String username) {
-        return Optional.ofNullable(dao.userByUsername.get(username)).map(user -> user.password).orElse(null);
+    public static Optional<String> getUserPassword(String username) {
+        return Optional.ofNullable(dao.userByUsername.get(username)).map(user -> user.password);
     }
 
     /* An entity class. */
