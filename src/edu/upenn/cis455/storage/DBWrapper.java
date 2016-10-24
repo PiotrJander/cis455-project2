@@ -10,6 +10,7 @@ import com.sleepycat.persist.model.Entity;
 import com.sleepycat.persist.model.PrimaryKey;
 
 import java.io.File;
+import java.util.Optional;
 
 public class DBWrapper {
 	
@@ -39,9 +40,17 @@ public class DBWrapper {
         dao = new UserAccessor(store);
     }
 
+    public static void addUser(String username, String password) {
+        dao.userByUsername.put(new User(username, password));
+    }
+
+    public static String getUserPassword(String username) {
+        return Optional.ofNullable(dao.userByUsername.get(username)).map(user -> user.password).orElse(null);
+    }
+
     /* An entity class. */
     @Entity
-    static class User {
+    private static class User {
 
         @PrimaryKey
         String username;
@@ -57,11 +66,11 @@ public class DBWrapper {
     }
 
     /* The data accessor class for the entity model. */
-    static class UserAccessor {
+    private static class UserAccessor {
 
         PrimaryIndex<String,User> userByUsername;
 
-        public UserAccessor(EntityStore store) throws DatabaseException {
+        UserAccessor(EntityStore store) throws DatabaseException {
             userByUsername = store.getPrimaryIndex(String.class, User.class);
         }
     }

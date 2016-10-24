@@ -9,9 +9,12 @@ import javax.servlet.http.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import org.apache.log4j.Logger;
+import org.apache.log4j.BasicConfigurator;  // TODO maybe
 
 @SuppressWarnings("serial")
 public class XPathServlet extends HttpServlet {
+    private static Logger log = Logger.getLogger(XPathServlet.class);
 
     @Override
     public void init(ServletConfig config) throws ServletException {
@@ -20,7 +23,8 @@ public class XPathServlet extends HttpServlet {
             String envDirPath = config.getServletContext().getInitParameter("BDBstore");
             DBWrapper.init(new File(envDirPath));
         } catch (DatabaseException e) {
-            e.printStackTrace();
+            log.error(e);
+            System.exit(1);
         }
     }
 
