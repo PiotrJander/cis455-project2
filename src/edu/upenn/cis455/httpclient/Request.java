@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,6 +27,16 @@ public class Request {
         }
     }
 
+    public Request(String method, URL url) {
+        try {
+            this.method = HttpMethod.valueOf(method);
+            this.url = url;
+            setRequiredHeaders();
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+        }
+    }
+
     public Request(HttpMethod method, URL url) {
         this.method = method;
         this.url = url;
@@ -41,24 +52,26 @@ public class Request {
         headers.put(name, value);
     }
 
-    public Response fetch() throws RequestError {
+    public Response fetch() throws RequestError, SocketTimeoutException {
         try (
-            Socket echoSocket = new Socket(url.getHost(), url.getPort());
+            Socket socket = new Socket(url.getHost(), url.getPort());
             PrintWriter out =
-                    new PrintWriter(echoSocket.getOutputStream(), true);
+                    new PrintWriter(socket.getOutputStream(), true);
             BufferedReader in =
                     new BufferedReader(
-                            new InputStreamReader(echoSocket.getInputStream()));
+                            new InputStreamReader(socket.getInputStream()));
         ) {
+            socket.setSoTimeout(2000);
+
             writeRequest(out);
 
             return getResponse(in);
-        } catch (IOException | BadResponse e) {
+        } catch (IOException | BadResponseException e) {
             throw new RequestError();
         }
     }
 
-    public void writeRequest(PrintWriter out) {
+    private void writeRequest(PrintWriter out) {
         out.println(String.format("%s %s HTTP/1.1", method.name(), url.toString()));
         for (Map.Entry header : headers.entrySet()) {
             out.println(header.getKey() + ": " + header.getValue());
@@ -66,12 +79,20 @@ public class Request {
         out.println();
     }
 
-    public Response getResponse(BufferedReader in) throws IOException, BadResponse {
+    private Response getResponse(BufferedReader in) throws IOException, BadResponseException {
         Response response = new Response(in);
         response.parse();
         return response;
     }
+
+    /**
+     * Test method.
+     */
+    public static void main(String[] args) {
+        Request request = new Request("GET", "http://foo.org/path");
+        PrintWriter writer = new PrintWriter(System.out);
+        request.writeRequest(writer);
+        writer.flush();
+        writer.close();
+    }
 }
-
-
-class RequestError extends Exception {}
