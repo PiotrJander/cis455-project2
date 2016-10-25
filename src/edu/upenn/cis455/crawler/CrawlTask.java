@@ -12,11 +12,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
-public class CrawlTask {
+class CrawlTask {
 
     private URL url;
 
-    public CrawlTask(URL url) {
+    CrawlTask(URL url) {
         this.url = url;
     }
 
@@ -42,6 +42,7 @@ public class CrawlTask {
         if (contentLength.isPresent()) {
             char[] buffer = new char[contentLength.orElse(null)];
             int length = response.getReader().read(buffer, 0, contentLength.orElse(null));
+            response.getReader().close();
             documentText = String.valueOf(buffer, 0, length);
         } else {
             return new LinkedList<>();
@@ -54,8 +55,9 @@ public class CrawlTask {
                 return new LinkedList<>();
             case HTML:
             case XHTML:
-                ;
-            case OTHER:
+                return new LinkedList<>();
+                // TODO do
+            default:
                 return new LinkedList<>();
         }
     }
@@ -113,7 +115,7 @@ enum ContentType {
     HTML,
     XHTML,
     XML,
-    OTHER;
+    OTHER
 }
 
 

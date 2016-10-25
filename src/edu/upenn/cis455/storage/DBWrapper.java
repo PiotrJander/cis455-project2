@@ -11,8 +11,7 @@ import com.sleepycat.persist.model.PrimaryKey;
 
 import java.io.File;
 import java.net.URL;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
+import java.util.Date;
 import java.util.Optional;
 
 public class DBWrapper {
@@ -57,8 +56,8 @@ public class DBWrapper {
         documentAccessor.documentByUrl.put(new Document(url, text));
     }
 
-    public static ZonedDateTime getDocumentDate(URL url) {
-        Document document = documentAccessor.documentByUrl.get(url);
+    public static Date getDocumentDate(URL url) {
+        Document document = documentAccessor.documentByUrl.get(url.toString());
         if (document != null) {
             return document.dateRetrieved;
         } else {
@@ -67,7 +66,7 @@ public class DBWrapper {
     }
 
     public static String getDocumentText(URL url) {
-        Document document = documentAccessor.documentByUrl.get(url);
+        Document document = documentAccessor.documentByUrl.get(url.toString());
         if (document != null) {
             return document.text;
         } else {
@@ -84,7 +83,7 @@ public class DBWrapper {
 
         String password;
 
-        public User(String username, String password) {
+        User(String username, String password) {
             this.username = username;
             this.password = password;
         }
@@ -107,14 +106,14 @@ public class DBWrapper {
     private static class Document {
 
         @PrimaryKey
-        URL url;
+        String url;
 
-        ZonedDateTime dateRetrieved;
+        Date dateRetrieved;
         String text;
 
-        public Document(URL url, String text) {
-            this.url = url;
-            this.dateRetrieved = ZonedDateTime.now(ZoneOffset.UTC);
+        Document(URL url, String text) {
+            this.url = url.toString();
+            this.dateRetrieved = new Date();
             this.text = text;
         }
 
@@ -124,10 +123,10 @@ public class DBWrapper {
     /* The data accessor class for the entity model. */
     private static class DocumentAccessor {
 
-        PrimaryIndex<URL,Document> documentByUrl;
+        PrimaryIndex<String,Document> documentByUrl;
 
         DocumentAccessor(EntityStore store) throws DatabaseException {
-            documentByUrl = store.getPrimaryIndex(URL.class, Document.class);
+            documentByUrl = store.getPrimaryIndex(String.class, Document.class);
         }
     }
 	

@@ -22,11 +22,14 @@ public class XPathCrawler {
     private LinkedList<URL> frontier = new LinkedList<>();
     private Set<URL> visited = new HashSet<>();
 
-    public XPathCrawler(URL start) {
+    private XPathCrawler(URL start) {
         frontier.add(start);
     }
 
-    void crawl() {
+    XPathCrawler() {
+    }
+
+    private void crawl() {
         while (visitedDocumentsCount < maxDocuments && !frontier.isEmpty()) {
             URL next = frontier.remove();
             CrawlTask task = new CrawlTask(next);
@@ -45,7 +48,7 @@ public class XPathCrawler {
         visitedDocumentsCount++;
     }
 
-    public static int getMaxSize() {
+    static int getMaxSize() {
         return maxSize;
     }
 
