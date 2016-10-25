@@ -10,6 +10,9 @@ import com.sleepycat.persist.model.Entity;
 import com.sleepycat.persist.model.PrimaryKey;
 
 import java.io.File;
+import java.net.URL;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.Optional;
 
 public class DBWrapper {
@@ -18,8 +21,9 @@ public class DBWrapper {
 	
 	private static Environment env;
 	private static EntityStore store;
-    private static UserAccessor dao;
-	
+    private static UserAccessor userAccessor;
+    private static DocumentAccessor documentAccessor;
+
 	/* TODO: write object store wrapper for BerkeleyDB */
 
     public static void init(File envHome) throws DatabaseException {
@@ -37,15 +41,38 @@ public class DBWrapper {
         store = new EntityStore(env, "UserStore", storeConfig);
 
         /* Initialize the data access object. */
-        dao = new UserAccessor(store);
+        userAccessor = new UserAccessor(store);
+        documentAccessor = new DocumentAccessor(store);
     }
 
     public static void addUser(String username, String password) {
-        dao.userByUsername.put(new User(username, password));
+        userAccessor.userByUsername.put(new User(username, password));
     }
 
     public static Optional<String> getUserPassword(String username) {
-        return Optional.ofNullable(dao.userByUsername.get(username)).map(user -> user.password);
+        return Optional.ofNullable(userAccessor.userByUsername.get(username)).map(user -> user.password);
+    }
+
+    public static void addDocument(URL url, String text) {
+        documentAccessor.documentByUrl.put(new Document(url, text));
+    }
+
+    public static ZonedDateTime getDocumentDate(URL url) {
+        Document document = documentAccessor.documentByUrl.get(url);
+        if (document != null) {
+            return document.dateRetrieved;
+        } else {
+            return null;
+        }
+    }
+
+    public static String getDocumentText(URL url) {
+        Document document = documentAccessor.documentByUrl.get(url);
+        if (document != null) {
+            return document.text;
+        } else {
+            return null;
+        }
     }
 
     /* An entity class. */
@@ -72,6 +99,35 @@ public class DBWrapper {
 
         UserAccessor(EntityStore store) throws DatabaseException {
             userByUsername = store.getPrimaryIndex(String.class, User.class);
+        }
+    }
+
+    /* An entity class. */
+    @Entity
+    private static class Document {
+
+        @PrimaryKey
+        URL url;
+
+        ZonedDateTime dateRetrieved;
+        String text;
+
+        public Document(URL url, String text) {
+            this.url = url;
+            this.dateRetrieved = ZonedDateTime.now(ZoneOffset.UTC);
+            this.text = text;
+        }
+
+        private Document() {} // For deserialization
+    }
+
+    /* The data accessor class for the entity model. */
+    private static class DocumentAccessor {
+
+        PrimaryIndex<URL,Document> documentByUrl;
+
+        DocumentAccessor(EntityStore store) throws DatabaseException {
+            documentByUrl = store.getPrimaryIndex(URL.class, Document.class);
         }
     }
 	

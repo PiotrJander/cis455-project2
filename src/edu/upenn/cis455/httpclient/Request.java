@@ -8,6 +8,7 @@ import java.net.MalformedURLException;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -54,12 +55,12 @@ public class Request {
 
     public Response fetch() throws RequestError, SocketTimeoutException {
         try (
-            Socket socket = new Socket(url.getHost(), url.getPort());
-            PrintWriter out =
+                Socket socket = new Socket(url.getHost(), url.getPort());
+                PrintWriter out =
                     new PrintWriter(socket.getOutputStream(), true);
-            BufferedReader in =
+                BufferedReader in =
                     new BufferedReader(
-                            new InputStreamReader(socket.getInputStream()));
+                            new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
         ) {
             socket.setSoTimeout(2000);
 
