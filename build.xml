@@ -54,6 +54,9 @@
         <mkdir dir="${classes.dir}"/>
         <javac srcdir="src/edu/upenn/cis455/servlet" destdir="${classes.dir}" debug="on" deprecation="off" optimize="on" includeAntRuntime="no">
             <classpath>
+                <!--<filelist>-->
+                    <!--<file name="${inputlib.dir}${file.separator}servlet-api.jar"/>-->
+                <!--</filelist>-->
                 <fileset dir="${inputlib.dir}">
                     <include name="*.jar"/>
                 </fileset>

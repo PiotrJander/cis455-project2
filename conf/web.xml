@@ -8,7 +8,7 @@
    <display-name>Channel Subscription Servlets</display-name>
    <context-param>
      <param-name>BDBstore</param-name>
-     <param-value>database</param-value>
+     <param-value>/Users/piotr/Desktop/bdb</param-value>
    </context-param>
     
    <servlet>

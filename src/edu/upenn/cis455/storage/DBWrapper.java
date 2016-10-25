@@ -26,13 +26,13 @@ public class DBWrapper {
 
         /* Open a transactional Berkeley DB engine environment. */
         EnvironmentConfig envConfig = new EnvironmentConfig();
-//        envConfig.setAllowCreate(true);
+        envConfig.setAllowCreate(true);
 //        envConfig.setTransactional(true);
         env = new Environment(envHome, envConfig);
 
         /* Open a transactional entity store. */
         StoreConfig storeConfig = new StoreConfig();
-//        storeConfig.setAllowCreate(true);
+        storeConfig.setAllowCreate(true);
 //        storeConfig.setTransactional(true);
         store = new EntityStore(env, "UserStore", storeConfig);
 

@@ -18,6 +18,7 @@ public class XPathServlet extends HttpServlet {
 
     @Override
     public void init(ServletConfig config) throws ServletException {
+//        BasicConfigurator.configure();
         try {
             super.init(config);
             String envDirPath = config.getServletContext().getInitParameter("BDBstore");
@@ -50,7 +51,8 @@ public class XPathServlet extends HttpServlet {
         try {
             PrintWriter writer = response.getWriter();
             writer.println("<html><head><title>Home page</title></head><body>");
-            writer.println("User name: " + request.getSession().getAttribute("username"));
+            writer.println("<p>User name: " + request.getSession().getAttribute("username") + "</p>");
+            writer.println("<a href=\"logout\">Logout</a>");
             writer.println("</body></html>");
         } catch (IOException e) {
             e.printStackTrace();
@@ -63,7 +65,7 @@ public class XPathServlet extends HttpServlet {
             writer.println("<html><head><title>Home page</title></head><body>");
             writer.println("<form action=\"register.jsp\" method=\"post\">");
             writer.println("<p>Username <input type=\"text\" name=\"username\"></p>");
-            writer.println("<p>Password <input type=\"text\" name=\"password\"></p>");
+            writer.println("<p>Password <input type=\"password\" name=\"password\"></p>");
             writer.println("<p><input type=\"submit\"></p>");
             writer.println("</form>");
             writer.println("</body></html>");

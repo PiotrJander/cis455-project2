@@ -23,13 +23,12 @@ public class AuthServlet extends HttpServlet {
                 if (dbPassword.orElse(null).equals(password)) {
                     request.getSession().setAttribute("username", username);
                 } else {
-                    response.sendRedirect("xpath");
                 }
             } else {
                 // create new user
                 DBWrapper.addUser(username, password);
-                response.sendRedirect("xpath");
             }
         }
+        response.sendRedirect("xpath");
     }
 }
