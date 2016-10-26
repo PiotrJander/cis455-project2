@@ -27,6 +27,7 @@ public class AuthServlet extends HttpServlet {
             } else {
                 // create new user
                 DBWrapper.addUser(username, password);
+                request.getSession().setAttribute("username", username);
             }
         }
         response.sendRedirect("xpath");

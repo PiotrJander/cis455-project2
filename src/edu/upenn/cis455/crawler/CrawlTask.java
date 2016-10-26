@@ -1,13 +1,21 @@
 package edu.upenn.cis455.crawler;
 
+import edu.upenn.cis455.httpclient.HttpStatus;
 import edu.upenn.cis455.httpclient.Request;
 import edu.upenn.cis455.httpclient.RequestError;
 import edu.upenn.cis455.httpclient.Response;
 import edu.upenn.cis455.storage.DBWrapper;
+import org.w3c.dom.Document;
+import org.w3c.tidy.Tidy;
 
 import java.io.IOException;
+import java.io.StringWriter;
 import java.net.SocketTimeoutException;
 import java.net.URL;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -24,13 +32,13 @@ class CrawlTask {
         try {
             if (isHeadRequestSuccessful()) {
                 return getRequest();
-            } else {
-                return new LinkedList<>();
             }
+        } catch (SocketTimeoutException e) {
+            System.out.println("Connection timeout.");
         } catch (RequestError | IOException e) {  // SocketTimeoutException is subclass of IOException
             e.printStackTrace();
-            return new LinkedList<>();
         }
+        return new LinkedList<>();
     }
 
     private List<URL> getRequest() throws RequestError, IOException {
@@ -38,25 +46,31 @@ class CrawlTask {
         Response response = request.fetch();
 
         Optional<Integer> contentLength = response.getIntHeader("Content-Length");
-        String documentText;
-        if (contentLength.isPresent()) {
-            char[] buffer = new char[contentLength.orElse(null)];
-            int length = response.getReader().read(buffer, 0, contentLength.orElse(null));
-            response.getReader().close();
-            documentText = String.valueOf(buffer, 0, length);
-        } else {
-            return new LinkedList<>();
-        }
+//        String documentText;
+//        if (contentLength.isPresent()) {
+//            char[] buffer = new char[contentLength.orElse(null)];
+//            int length = response.getReader().read(buffer, 0, contentLength.orElse(null));
+//            response.getReader().close();
+//            documentText = String.valueOf(buffer, 0, length);
+//        } else {
+//            return new LinkedList<>();
+//        }
 
         ContentType contentType = getContentType(response.getHeader("Content-Type"));
         switch (contentType) {
             case XML:
-                DBWrapper.addDocument(url, documentText);
+//                DBWrapper.addDocument(url, documentText);
+                // TODO best way to get string from response
                 return new LinkedList<>();
             case HTML:
             case XHTML:
-                return new LinkedList<>();
-                // TODO do
+                Tidy tidy = new Tidy();
+                tidy.setXHTML(true);
+                StringWriter stringWriter = new StringWriter();
+                Document document = tidy.parseDOM(response.getReader(), stringWriter);
+                String xhtml = stringWriter.toString();
+                System.out.println(xhtml);  // TODO remove
+                DBWrapper.addDocument(url, xhtml);
             default:
                 return new LinkedList<>();
         }
@@ -64,7 +78,13 @@ class CrawlTask {
 
     private boolean isHeadRequestSuccessful() throws RequestError, SocketTimeoutException {
         Request headRequest = new Request("HEAD", url);
+        setIfModifiedSince(headRequest);
         Response headResponse = headRequest.fetch();
+
+        if (headResponse.getStatus() == HttpStatus.NOT_MODIFIED) {
+            reportHeadFailure("Not modified since the last retrieval.");
+            return false;
+        }
 
         if (headResponse.getHeader("Transfer-Encoding") != null) {
             reportHeadFailure("Chunked encoding not supported.");
@@ -89,6 +109,15 @@ class CrawlTask {
         }
 
         return true;
+    }
+
+    private void setIfModifiedSince(Request headRequest) {
+        Date lastRetrievedDate = DBWrapper.getDocumentDate(url);
+        if (lastRetrievedDate != null) {
+            ZonedDateTime zonedDateTime = ZonedDateTime.ofInstant(lastRetrievedDate.toInstant(), ZoneOffset.UTC);
+            String formattedDate = zonedDateTime.format(DateTimeFormatter.RFC_1123_DATE_TIME);
+            headRequest.setHeader("If-Modified-Since", formattedDate);
+        }
     }
 
     private void reportHeadFailure(String reason) {

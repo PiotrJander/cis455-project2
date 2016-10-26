@@ -27,7 +27,6 @@ public class Response {
     private void parseHeaders() throws IOException {
         String line;
         while (!Objects.equals(line = in.readLine(), "")) {
-            // TODO are headers always followed by a newline?
             String[] header = line.split(": ");
             headers.put(header[0].toLowerCase(), header[1]);
         }

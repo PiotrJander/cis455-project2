@@ -27,6 +27,14 @@ public class DBWrapper {
 
     public static void init(File envHome) throws DatabaseException {
 
+        // create the directory if it doesn't exist
+        try {
+            //noinspection ResultOfMethodCallIgnored
+            envHome.mkdirs();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         /* Open a transactional Berkeley DB engine environment. */
         EnvironmentConfig envConfig = new EnvironmentConfig();
         envConfig.setAllowCreate(true);
@@ -57,7 +65,11 @@ public class DBWrapper {
     }
 
     public static Date getDocumentDate(URL url) {
-        Document document = documentAccessor.documentByUrl.get(url.toString());
+        return getDocumentDate(url.toString());
+    }
+
+    public static Date getDocumentDate(String url) {
+        Document document = documentAccessor.documentByUrl.get(url);
         if (document != null) {
             return document.dateRetrieved;
         } else {
@@ -66,7 +78,11 @@ public class DBWrapper {
     }
 
     public static String getDocumentText(URL url) {
-        Document document = documentAccessor.documentByUrl.get(url.toString());
+        return getDocumentText(url.toString());
+    }
+
+    public static String getDocumentText(String url) {
+        Document document = documentAccessor.documentByUrl.get(url);
         if (document != null) {
             return document.text;
         } else {

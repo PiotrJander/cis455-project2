@@ -8,7 +8,7 @@
    <display-name>Channel Subscription Servlets</display-name>
    <context-param>
      <param-name>BDBstore</param-name>
-     <param-value>/Users/piotr/Desktop/bdb</param-value>
+     <param-value>/tmp/database/piotr</param-value>
    </context-param>
     
    <servlet>
@@ -22,6 +22,10 @@
    <servlet>
      <servlet-name>logout</servlet-name>
      <servlet-class>edu.upenn.cis455.servlet.LogoutServlet</servlet-class>
+   </servlet>
+   <servlet>
+     <servlet-name>lookup</servlet-name>
+     <servlet-class>edu.upenn.cis455.servlet.LookupServlet</servlet-class>
    </servlet>
 
    <servlet-mapping>
@@ -38,6 +42,12 @@
    <servlet-mapping>
      <servlet-name>logout</servlet-name>
      <url-pattern>/logout</url-pattern>
+   </servlet-mapping>
+
+
+   <servlet-mapping>
+     <servlet-name>lookup</servlet-name>
+     <url-pattern>/lookup</url-pattern>
    </servlet-mapping>
 
 </web-app>
