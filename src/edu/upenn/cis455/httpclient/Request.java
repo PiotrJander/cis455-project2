@@ -1,5 +1,7 @@
 package edu.upenn.cis455.httpclient;
 
+import edu.upenn.cis455.crawler.XPathCrawler;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -46,7 +48,7 @@ public class Request {
 
     private void setRequiredHeaders() {
         setHeader("Host", this.url.getHost());
-        setHeader("User-Agent", "cis455crawler");
+        setHeader("User-Agent", XPathCrawler.name);
     }
 
     public void setHeader(String name, String value) {

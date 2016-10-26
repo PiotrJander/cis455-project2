@@ -14,6 +14,8 @@ import java.util.Set;
 
 public class XPathCrawler {
 
+    public static final String name = "cis455crawler";
+
     private static URL startUrl;
     private static int maxSize;
     private static int maxDocuments = 1000;

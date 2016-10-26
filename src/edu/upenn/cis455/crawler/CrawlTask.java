@@ -6,6 +6,7 @@ import edu.upenn.cis455.httpclient.RequestError;
 import edu.upenn.cis455.httpclient.Response;
 import edu.upenn.cis455.storage.DBWrapper;
 import org.w3c.dom.Document;
+import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.w3c.tidy.Tidy;
 
@@ -35,7 +36,7 @@ class CrawlTask {
             return makeHeadRequest();
         } catch (SocketTimeoutException e) {
             System.out.println("Connection timeout.");
-        } catch (RequestError | IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return new LinkedList<>();
@@ -94,24 +95,77 @@ class CrawlTask {
         }
     }
 
-    private List<URL> processHtml(Response response) {
+    private List<URL> processHtml(Response response) throws MalformedURLException {
         Tidy tidy = new Tidy();
         tidy.setXHTML(true);
         StringWriter stringWriter = new StringWriter();
         Document document = tidy.parseDOM(new StringReader(response.getBody()), stringWriter);
 
-        // meta robots
-        NodeList metaTags = document.getElementsByTagName("meta");
+        String metaRobots = getMetaRobots(document);
 
+        if (metaRobots == null || !metaRobots.contains("noindex")) {
+            String xhtml = stringWriter.toString();
+            DBWrapper.addDocument(url, xhtml);
+        }
 
-        String xhtml = stringWriter.toString();
-        System.out.println(xhtml);  // TODO remove
-        DBWrapper.addDocument(url, xhtml);
-        return extractUrls();
+        if (metaRobots == null || !metaRobots.contains("nofollow")) {
+            return extractUrls(document);
+        } else {
+            return new LinkedList<>();
+        }
     }
 
-    private List<URL> extractUrls() {
-        return new LinkedList<>();
+    private String getMetaRobots(Document document) {
+        NodeList metaTags = document.getElementsByTagName("meta");
+        for (int i = 0; i < metaTags.getLength(); i++) {
+            Node meta = metaTags.item(i);
+
+            String name = getAttribute(meta, "name");
+            String content = getAttribute(meta, "content");
+
+            if (name.equals("robots")) {
+                return content;
+            }
+        }
+        return null;
+    }
+
+    private static String getAttribute(Node n, String s) {
+        Node nameAttr = n.getAttributes().getNamedItem("name");
+        if (nameAttr != null) {
+            return nameAttr.getTextContent();
+        } else {
+            return null;
+        }
+    }
+
+    private List<URL> extractUrls(Document document) throws MalformedURLException {
+
+        URL contextUrl = getContextUrl(document);
+        LinkedList<URL> urls = new LinkedList<>();
+
+        NodeList anchorList = document.getElementsByTagName("a");
+        for (int i = 0; i < anchorList.getLength(); i++) {
+            Node anchor = anchorList.item(i);
+            String href = getAttribute(anchor, "href");
+            if (href != null) {
+                urls.add(new URL(contextUrl, href));
+            }
+        }
+
+        return urls;
+    }
+
+    private URL getContextUrl(Document document) throws MalformedURLException {
+        NodeList baseTagList = document.getElementsByTagName("base");
+        if (baseTagList.getLength() > 0) {
+            Node baseTag = baseTagList.item(0);
+            String href = getAttribute(baseTag, "href");
+            if (href != null) {
+                return new URL(url, href);
+            }
+        }
+        return url;
     }
 
     private List<URL> processXml(Response response, int contentLength) throws IOException {
