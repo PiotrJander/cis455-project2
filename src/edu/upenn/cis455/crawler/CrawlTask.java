@@ -1,5 +1,6 @@
 package edu.upenn.cis455.crawler;
 
+import edu.upenn.cis455.httpclient.HttpStatus;
 import edu.upenn.cis455.httpclient.Request;
 import edu.upenn.cis455.httpclient.RequestError;
 import edu.upenn.cis455.httpclient.Response;
@@ -29,37 +30,84 @@ class CrawlTask {
 
     List<URL> run() {
         try {
-            // head request
-            Request headRequest = new Request("HEAD", url);
-            setIfModifiedSince(headRequest);
-            Response headResponse = headRequest.fetch();
-
-            switch (headResponse.getStatus()) {
-                case OK_200:
-                    // TODO further check request
-
-                    Request getRequest = new Request("HEAD", url);
-                    setIfModifiedSince(getRequest);
-                    Response getResponse = getRequest.fetch();
-                case MOVED_PERMANENTLY_301:
-                    return handleMovedPermanently(headResponse);
-                case FOUND_302:
-                    reportSkippingUrl("Temporary redirects not supported.");
-                    return new LinkedList<>();
-                case NOT_MODIFIED_304:
-                    reportSkippingUrl("Not modified");
-                    // TODO add urls to frontier anyway
-                    return new LinkedList<>();
-                default:
-                    reportSkippingUrl("Request or server error");
-                    return new LinkedList<>();
-            }
-
+            return makeHeadRequest();
         } catch (SocketTimeoutException e) {
             System.out.println("Connection timeout.");
-        } catch (RequestError | IOException e) {  // SocketTimeoutException is subclass of IOException
+        } catch (RequestError | IOException e) {
             e.printStackTrace();
         }
+        return new LinkedList<>();
+    }
+
+    private List<URL> makeHeadRequest() throws RequestError, IOException {
+        Request headRequest = new Request("HEAD", url);
+        setIfModifiedSince(headRequest);
+        Response headResponse = headRequest.fetch();
+
+        switch (headResponse.getStatus()) {
+            case OK_200:
+                if (checkResponseHeaders(headResponse)) {
+                    return makeGetRequest();
+                } else {
+                    return new LinkedList<>();
+                }
+            case MOVED_PERMANENTLY_301:
+                return handleMovedPermanently(headResponse);
+            case FOUND_302:
+                reportSkippingUrl("Temporary redirects not supported.");
+                return new LinkedList<>();
+            case NOT_MODIFIED_304:
+                reportSkippingUrl("Not modified since the last retrieval.");
+                // TODO add urls to frontier anyway
+                return new LinkedList<>();
+            default:
+                reportSkippingUrl("Request or server error");
+                return new LinkedList<>();
+        }
+    }
+
+    private List<URL> makeGetRequest() throws RequestError, IOException {
+        Request getRequest = new Request("GET", url);
+        setIfModifiedSince(getRequest);
+        Response getResponse = getRequest.fetch();
+
+        if (getResponse.getStatus() == HttpStatus.OK_200 && checkResponseHeaders(getResponse)) {
+            return processDocument(getResponse);
+        } else {
+            return new LinkedList<>();
+        }
+    }
+
+    private List<URL> processDocument(Response getResponse) throws IOException {
+        int contentLength = getResponse.getIntHeader("Content-Length").orElse(null);
+        ContentType contentType = getContentType(getResponse.getHeader("Content-Type"));
+        switch (contentType) {
+            case XML:
+                return processXml(getResponse, contentLength);
+            case HTML:
+            case XHTML:
+                processHtml(getResponse);
+            default:
+                return new LinkedList<>();
+        }
+    }
+
+    private List<URL> processHtml(Response getResponse) {
+        Tidy tidy = new Tidy();
+        tidy.setXHTML(true);
+        StringWriter stringWriter = new StringWriter();
+        Document document = tidy.parseDOM(getResponse.getReader(), stringWriter);
+        String xhtml = stringWriter.toString();
+        System.out.println(xhtml);  // TODO remove
+        DBWrapper.addDocument(url, xhtml);
+        return new LinkedList<>();
+    }
+
+    private List<URL> processXml(Response getResponse, int contentLength) throws IOException {
+        char[] buffer = new char[contentLength];
+        int length = getResponse.getReader().read(buffer, 0, contentLength);
+        String documentText = String.valueOf(buffer, 0, length);
+        DBWrapper.addDocument(url, documentText);
         return new LinkedList<>();
     }
 
@@ -72,69 +120,7 @@ class CrawlTask {
         }
     }
 
-    private List<URL> getRequest() throws RequestError, IOException {
-        Request request = new Request("GET", url);
-        Response response = request.fetch();
-
-        Optional<Integer> contentLength = response.getIntHeader("Content-Length");
-//        String documentText;
-//        if (contentLength.isPresent()) {
-//            char[] buffer = new char[contentLength.orElse(null)];
-//            int length = response.getReader().read(buffer, 0, contentLength.orElse(null));
-//            response.getReader().close();
-//            documentText = String.valueOf(buffer, 0, length);
-//        } else {
-//            return new LinkedList<>();
-//        }
-
-        ContentType contentType = getContentType(response.getHeader("Content-Type"));
-        switch (contentType) {
-            case XML:
-//                DBWrapper.addDocument(url, documentText);
-                // TODO best way to get string from response
-                return new LinkedList<>();
-            case HTML:
-            case XHTML:
-                Tidy tidy = new Tidy();
-                tidy.setXHTML(true);
-                StringWriter stringWriter = new StringWriter();
-                Document document = tidy.parseDOM(response.getReader(), stringWriter);
-                String xhtml = stringWriter.toString();
-                System.out.println(xhtml);  // TODO remove
-                DBWrapper.addDocument(url, xhtml);
-            default:
-                return new LinkedList<>();
-        }
-    }
-
-    private boolean isHeadRequestSuccessful() throws RequestError, SocketTimeoutException {
-        Request headRequest = new Request("HEAD", url);
-        setIfModifiedSince(headRequest);
-        Response headResponse = headRequest.fetch();
-
-        switch (headResponse.getStatus()) {
-            case OK_200:
-                ;
-            case MOVED_PERMANENTLY_301:
-                ;
-            case FOUND_302:
-                ;
-            case NOT_MODIFIED_304:
-                ;
-            default:
-                reportSkippingUrl("Request or server error");
-                return false;
-        }
-
-        return checkHeadResponse(headResponse);
-    }
-
-    private boolean checkHeadResponse(Response headResponse) {
-        if (headResponse.getStatus() == NOT_MODIFIED_304) {
-            reportSkippingUrl("Not modified since the last retrieval.");
-            return false;
-        }
-
+    private boolean checkResponseHeaders(Response headResponse) {
         if (headResponse.getHeader("Transfer-Encoding") != null) {
             reportSkippingUrl("Chunked encoding not supported.");
             return false;
@@ -196,16 +182,3 @@ enum ContentType {
     OTHER
 }
 
-
-class CrawlingException extends Exception {
-
-    private String reason;
-
-    CrawlingException(String reason) {
-        this.reason = reason;
-    }
-
-    public String getReason() {
-        return reason;
-    }
-}

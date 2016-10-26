@@ -65,7 +65,7 @@ public class Request {
             BufferedReader in =
                     new BufferedReader(
                             new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
-            socket.setSoTimeout(10000);
+//            socket.setSoTimeout(10000);
 
             writeRequest(out);
 
