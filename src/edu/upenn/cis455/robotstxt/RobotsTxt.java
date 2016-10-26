@@ -18,7 +18,6 @@ public class RobotsTxt {
     private int crawlDelay;
     private List<String> disallow;
     private Instant lastAccess;
-    // TODO set this last access
 
     RobotsTxt(String domain, Integer crawlDelay, List<String> disallow) {
         this.domain = domain;
@@ -28,7 +27,7 @@ public class RobotsTxt {
     }
 
     static RobotsTxt fetch(String domain) throws IOException, RequestError, RobotsTxtSyntaxError {
-        URL robotsTxtUrl = new URL("http", domain, "/robots.txt");  // TODO restore http
+        URL robotsTxtUrl = new URL("http", domain, "/robots.txt");
         Request request = new Request("GET", robotsTxtUrl);
         Response response = request.fetch();
 
@@ -51,7 +50,7 @@ public class RobotsTxt {
         }
     }
 
-    static RobotsTxt fetchRedirect(String domain, URL location) throws IOException, RequestError, RobotsTxtSyntaxError {
+    private static RobotsTxt fetchRedirect(String domain, URL location) throws IOException, RequestError, RobotsTxtSyntaxError {
         Request request = new Request("GET", location);
         Response response = request.fetch();
 

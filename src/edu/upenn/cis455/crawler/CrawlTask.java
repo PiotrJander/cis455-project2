@@ -62,6 +62,7 @@ class CrawlTask {
                         // time hasn't elapsed yet; add the URL to the end of the queue
                         return new LinkedList<>(Collections.singletonList(url));
                     }
+//                    return makeHeadRequest();
                 }
             } else {
                 return makeHeadRequest();
@@ -143,6 +144,8 @@ class CrawlTask {
     private List<URL> processHtml(String content) throws MalformedURLException {
         Tidy tidy = new Tidy();
         tidy.setXHTML(true);
+        tidy.setShowErrors(0);
+        tidy.setQuiet(true);
         StringWriter stringWriter = new StringWriter();
         Document document = tidy.parseDOM(new StringReader(content), stringWriter);
 

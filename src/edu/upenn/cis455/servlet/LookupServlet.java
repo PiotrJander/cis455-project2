@@ -1,6 +1,7 @@
 package edu.upenn.cis455.servlet;
 
 import edu.upenn.cis455.storage.DBWrapper;
+import edu.upenn.cis455.storage.Document;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -21,11 +22,11 @@ public class LookupServlet extends HttpServlet {
             body.println("Usage: /lookup?url=<encoded-url>");
         } else {
             String url = URLDecoder.decode(encodedUrl, "UTF-8");
-            String documentText = DBWrapper.getDocumentText(url);
-            if (documentText == null) {
+            Document document = DBWrapper.getDocument(url);
+            if (document == null) {
                 body.println(String.format("Url %s not found.", url));
             } else {
-                body.print(documentText);
+                body.print(document.getText());
             }
         }
     }

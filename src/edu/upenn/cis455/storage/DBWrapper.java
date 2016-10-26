@@ -22,8 +22,6 @@ public class DBWrapper {
     private static UserAccessor userAccessor;
     private static DocumentAccessor documentAccessor;
 
-	/* TODO: write object store wrapper for BerkeleyDB */
-
     public static void init(File envHome) throws DatabaseException {
 
         // create the directory if it doesn't exist
