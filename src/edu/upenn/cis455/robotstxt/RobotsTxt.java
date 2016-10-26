@@ -8,6 +8,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.URL;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
@@ -19,17 +20,31 @@ public class RobotsTxt {
     private Instant lastAccess;
     // TODO set this last access
 
-    public RobotsTxt(String domain, Integer crawlDelay, List<String> disallow) {
+    RobotsTxt(String domain, Integer crawlDelay, List<String> disallow) {
         this.domain = domain;
         this.crawlDelay = crawlDelay;
         this.disallow = disallow;
     }
 
-    public String getDomain() {
+    static RobotsTxt fetch(String domain) throws IOException, RequestError, RobotsTxtSyntaxError {
+        URL robotsTxtUrl = new URL("http", domain, "/robots.txt");
+        Request request = new Request("GET", robotsTxtUrl);
+        Response response = request.fetch();
+
+        switch (response.getStatus()) {
+            case OK_200:
+                BufferedReader stringReader = new BufferedReader(new StringReader(response.getBody()));
+                return (new RobotsTxtParser(domain, stringReader)).parse();
+            default:
+                return null;
+        }
+    }
+
+    String getDomain() {
         return domain;
     }
 
-    public int getCrawlDelay() {
+    int getCrawlDelay() {
         return crawlDelay;
     }
 
@@ -42,18 +57,12 @@ public class RobotsTxt {
         return true;
     }
 
-    public static RobotsTxt fetch(String domain) throws IOException, RequestError, RobotsTxtSyntaxError {
-        URL robotsTxtUrl = new URL("http", domain, "/robots.txt");
-        Request request = new Request("GET", robotsTxtUrl);
-        Response response = request.fetch();
+    public boolean isTimeElapsed() {
+        return Duration.between(lastAccess, Instant.now()).getSeconds() > crawlDelay;
+    }
 
-        switch (response.getStatus()) {
-            case OK_200:
-                BufferedReader stringReader = new BufferedReader(new StringReader(response.getBody()));
-                return (new RobotsTxtParser(domain, stringReader)).parse();
-            default:
-                return null;
-        }
+    public void updateLastAccessedTime() {
+        lastAccess = Instant.now();
     }
 
 }

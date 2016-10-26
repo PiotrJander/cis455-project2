@@ -4,6 +4,8 @@ import edu.upenn.cis455.httpclient.HttpStatus;
 import edu.upenn.cis455.httpclient.Request;
 import edu.upenn.cis455.httpclient.RequestError;
 import edu.upenn.cis455.httpclient.Response;
+import edu.upenn.cis455.robotstxt.RobotsTxt;
+import edu.upenn.cis455.robotstxt.RobotsTxtMapping;
 import edu.upenn.cis455.storage.DBWrapper;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -21,7 +23,12 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
-import static edu.upenn.cis455.httpclient.HttpStatus.NOT_MODIFIED_304;
+enum ContentType {
+    HTML,
+    XHTML,
+    XML,
+    OTHER
+}
 
 class CrawlTask {
 
@@ -31,9 +38,32 @@ class CrawlTask {
         this.url = url;
     }
 
+    private static String getAttribute(Node n, String s) {
+        Node nameAttr = n.getAttributes().getNamedItem("name");
+        if (nameAttr != null) {
+            return nameAttr.getTextContent();
+        } else {
+            return null;
+        }
+    }
+
     List<URL> run() {
         try {
-            return makeHeadRequest();
+            // check robots.txt and maybe start making requests
+            RobotsTxt robotsTxt = RobotsTxtMapping.get(url.getHost());
+            if (robotsTxt != null) {
+                if (robotsTxt.isPathAllowed(url.getPath())) {
+                    if (robotsTxt.isTimeElapsed()) {
+                        robotsTxt.updateLastAccessedTime();
+                        return makeHeadRequest();
+                    } else {
+                        // time hasn't elapsed yet; add the URL to the end of the queue
+                        return Collections.singletonList(url);
+                    }
+                }
+            } else {
+                return makeHeadRequest();
+            }
         } catch (SocketTimeoutException e) {
             System.out.println("Connection timeout.");
         } catch (Exception e) {
@@ -123,20 +153,11 @@ class CrawlTask {
             String name = getAttribute(meta, "name");
             String content = getAttribute(meta, "content");
 
-            if (name.equals("robots")) {
+            if (Objects.equals(name, "robots")) {
                 return content;
             }
         }
         return null;
-    }
-
-    private static String getAttribute(Node n, String s) {
-        Node nameAttr = n.getAttributes().getNamedItem("name");
-        if (nameAttr != null) {
-            return nameAttr.getTextContent();
-        } else {
-            return null;
-        }
     }
 
     private List<URL> extractUrls(Document document) throws MalformedURLException {
@@ -234,13 +255,5 @@ class CrawlTask {
             return ContentType.OTHER;
         }
     }
-}
-
-
-enum ContentType {
-    HTML,
-    XHTML,
-    XML,
-    OTHER
 }
 
