@@ -30,6 +30,12 @@ public class XPathServlet extends HttpServlet {
     }
 
     @Override
+    public void destroy() {
+        super.destroy();
+        DBWrapper.close();
+    }
+
+    @Override
 	public void doPost(HttpServletRequest request, HttpServletResponse response) {
 		/* TODO: Implement user interface for XPath engine here */
 

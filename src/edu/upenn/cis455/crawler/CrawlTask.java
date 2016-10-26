@@ -1,6 +1,5 @@
 package edu.upenn.cis455.crawler;
 
-import edu.upenn.cis455.httpclient.HttpStatus;
 import edu.upenn.cis455.httpclient.Request;
 import edu.upenn.cis455.httpclient.RequestError;
 import edu.upenn.cis455.httpclient.Response;
@@ -10,15 +9,15 @@ import org.w3c.tidy.Tidy;
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.net.MalformedURLException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+
+import static edu.upenn.cis455.httpclient.HttpStatus.NOT_MODIFIED_304;
 
 class CrawlTask {
 
@@ -30,15 +29,47 @@ class CrawlTask {
 
     List<URL> run() {
         try {
-            if (isHeadRequestSuccessful()) {
-                return getRequest();
+            // head request
+            Request headRequest = new Request("HEAD", url);
+            setIfModifiedSince(headRequest);
+            Response headResponse = headRequest.fetch();
+
+            switch (headResponse.getStatus()) {
+                case OK_200:
+                    // TODO further check request
+
+                    Request getRequest = new Request("HEAD", url);
+                    setIfModifiedSince(getRequest);
+                    Response getResponse = getRequest.fetch();
+                case MOVED_PERMANENTLY_301:
+                    return handleMovedPermanently(headResponse);
+                case FOUND_302:
+                    reportSkippingUrl("Temporary redirects not supported.");
+                    return new LinkedList<>();
+                case NOT_MODIFIED_304:
+                    reportSkippingUrl("Not modified");
+                    // TODO add urls to frontier anyway
+                    return new LinkedList<>();
+                default:
+                    reportSkippingUrl("Request or server error");
+                    return new LinkedList<>();
             }
+
         } catch (SocketTimeoutException e) {
             System.out.println("Connection timeout.");
         } catch (RequestError | IOException e) {  // SocketTimeoutException is subclass of IOException
             e.printStackTrace();
         }
         return new LinkedList<>();
+    }
+
+    private List<URL> handleMovedPermanently(Response headResponse) throws MalformedURLException {
+        String location = headResponse.getHeader("Location");
+        if (location == null) {
+            return new LinkedList<>();
+        } else {
+            return Collections.singletonList(new URL(location));
+        }
     }
 
     private List<URL> getRequest() throws RequestError, IOException {
@@ -81,30 +112,48 @@ class CrawlTask {
         setIfModifiedSince(headRequest);
         Response headResponse = headRequest.fetch();
 
-        if (headResponse.getStatus() == HttpStatus.NOT_MODIFIED) {
-            reportHeadFailure("Not modified since the last retrieval.");
+        switch (headResponse.getStatus()) {
+            case OK_200:
+                ;
+            case MOVED_PERMANENTLY_301:
+                ;
+            case FOUND_302:
+                ;
+            case NOT_MODIFIED_304:
+                ;
+            default:
+                reportSkippingUrl("Request or server error");
+                return false;
+        }
+
+        return checkHeadResponse(headResponse);
+    }
+
+    private boolean checkHeadResponse(Response headResponse) {
+        if (headResponse.getStatus() == NOT_MODIFIED_304) {
+            reportSkippingUrl("Not modified since the last retrieval.");
             return false;
         }
 
         if (headResponse.getHeader("Transfer-Encoding") != null) {
-            reportHeadFailure("Chunked encoding not supported.");
+            reportSkippingUrl("Chunked encoding not supported.");
             return false;
         }
 
         Optional<Integer> contentLength = headResponse.getIntHeader("Content-Length");
         if (contentLength.isPresent()) {
             if (contentLength.orElse(null) > XPathCrawler.getMaxSize()) {
-                reportHeadFailure("Content-Length exceeds the limit.");
+                reportSkippingUrl("Content-Length exceeds the limit.");
                 return false;
             }
         } else {
-            reportHeadFailure("Content-Length not specified.");
+            reportSkippingUrl("Content-Length not specified.");
             return false;
         }
 
         ContentType contentType = getContentType(headResponse.getHeader("Content-Type"));
         if (contentType == ContentType.OTHER) {
-            reportHeadFailure("Content type other than HTML or XML");
+            reportSkippingUrl("Content type other than HTML or XML");
             return false;
         }
 
@@ -120,7 +169,7 @@ class CrawlTask {
         }
     }
 
-    private void reportHeadFailure(String reason) {
+    private void reportSkippingUrl(String reason) {
         System.out.println(String.format("Skippig %s; %s", url, reason));
     }
 

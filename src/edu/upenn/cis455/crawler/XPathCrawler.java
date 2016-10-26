@@ -42,6 +42,7 @@ public class XPathCrawler {
             }
             incrementVisitedDocumentCount();
         }
+        DBWrapper.close();
     }
 
     private static void incrementVisitedDocumentCount() {

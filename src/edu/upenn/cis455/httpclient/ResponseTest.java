@@ -10,14 +10,14 @@ public class ResponseTest extends TestCase {
     public void testParse() throws Exception {
 
         String responseText =
-                "HTTP/1.1 200 OK\n" +
+                "HTTP/1.1 200 OK_200\n" +
                 "Content-Type: text/html\n" +
                 "\n";
         Response response = new Response(
                 new BufferedReader(
                         new StringReader(responseText)));
         response.parse();
-        assertEquals(HttpStatus.OK, response.getStatus());
+        assertEquals(HttpStatus.OK_200, response.getStatus());
         assertEquals("text/html", response.getHeader("Content-Type"));
     }
 }

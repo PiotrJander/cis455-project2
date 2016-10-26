@@ -45,11 +45,34 @@ public class DBWrapper {
         StoreConfig storeConfig = new StoreConfig();
         storeConfig.setAllowCreate(true);
 //        storeConfig.setTransactional(true);
-        store = new EntityStore(env, "UserStore", storeConfig);
+        store = new EntityStore(env, "CrawlerStore", storeConfig);
 
         /* Initialize the data access object. */
         userAccessor = new UserAccessor(store);
         documentAccessor = new DocumentAccessor(store);
+    }
+
+    public static void close() {
+        if (store != null) {
+            try {
+                store.close();
+            } catch(DatabaseException dbe) {
+                System.err.println("Error closing store: " +
+                        dbe.toString());
+                System.exit(-1);
+            }
+        }
+
+        if (env != null) {
+            try {
+                // Finally, close environment.
+                env.close();
+            } catch(DatabaseException dbe) {
+                System.err.println("Error closing env: " +
+                        dbe.toString());
+                System.exit(-1);
+            }
+        }
     }
 
     public static void addUser(String username, String password) {
