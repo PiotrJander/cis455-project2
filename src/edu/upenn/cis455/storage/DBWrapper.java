@@ -11,7 +11,6 @@ import com.sleepycat.persist.model.PrimaryKey;
 
 import java.io.File;
 import java.net.URL;
-import java.util.Date;
 import java.util.Optional;
 
 public class DBWrapper {
@@ -83,34 +82,16 @@ public class DBWrapper {
         return Optional.ofNullable(userAccessor.userByUsername.get(username)).map(user -> user.password);
     }
 
-    public static void addDocument(URL url, String text) {
-        documentAccessor.documentByUrl.put(new Document(url, text));
+    public static void addDocument(URL url, String text, boolean isHtml) {
+        documentAccessor.documentByUrl.put(new Document(url, text, isHtml));
     }
 
-    public static Date getDocumentDate(URL url) {
-        return getDocumentDate(url.toString());
+    public static Document getDocument(URL url) {
+        return getDocument(url.toString());
     }
 
-    public static Date getDocumentDate(String url) {
-        Document document = documentAccessor.documentByUrl.get(url);
-        if (document != null) {
-            return document.dateRetrieved;
-        } else {
-            return null;
-        }
-    }
-
-    public static String getDocumentText(URL url) {
-        return getDocumentText(url.toString());
-    }
-
-    public static String getDocumentText(String url) {
-        Document document = documentAccessor.documentByUrl.get(url);
-        if (document != null) {
-            return document.text;
-        } else {
-            return null;
-        }
+    public static Document getDocument(String url) {
+        return documentAccessor.documentByUrl.get(url);
     }
 
     /* An entity class. */
@@ -138,25 +119,6 @@ public class DBWrapper {
         UserAccessor(EntityStore store) throws DatabaseException {
             userByUsername = store.getPrimaryIndex(String.class, User.class);
         }
-    }
-
-    /* An entity class. */
-    @Entity
-    private static class Document {
-
-        @PrimaryKey
-        String url;
-
-        Date dateRetrieved;
-        String text;
-
-        Document(URL url, String text) {
-            this.url = url.toString();
-            this.dateRetrieved = new Date();
-            this.text = text;
-        }
-
-        private Document() {} // For deserialization
     }
 
     /* The data accessor class for the entity model. */

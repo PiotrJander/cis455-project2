@@ -46,6 +46,17 @@ public class Request {
         setRequiredHeaders();
     }
 
+    /**
+     * Test method.
+     */
+    public static void main(String[] args) {
+        Request request = new Request("GET", "http://foo.org/path");
+        PrintWriter writer = new PrintWriter(System.out);
+        request.writeRequest(writer);
+        writer.flush();
+        writer.close();
+    }
+
     private void setRequiredHeaders() {
         setHeader("Host", this.url.getHost());
         setHeader("User-Agent", XPathCrawler.name);
@@ -56,13 +67,43 @@ public class Request {
     }
 
     public Response fetch() throws RequestError, SocketTimeoutException {
+        switch (url.getProtocol()) {
+            case "http":
+                return fetchHttp();
+            case "https":
+                throw new RequestError("https not supported yet");
+//                return fetchHttpSecure();
+            default:
+                throw new RequestError("protocol not supported yet");
+        }
+    }
+
+//    private Response fetchHttpSecure() throws RequestError {
+//        try {
+//            HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
+//            connection.setDoOutput(true);
+//            connection.connect();
+//            PrintWriter out =
+//                    new PrintWriter(connection.getOutputStream(), true);
+//            BufferedReader in =
+//                    new BufferedReader(
+//                            new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8));
+//            // socket.setSoTimeout(10000);
+//            writeRequest(out);
+//            return (new Response(in, method)).parse();
+//        } catch (IOException | BadResponseException e) {
+//            throw new RequestError();
+//        }
+//    }
+
+    private Response fetchHttp() throws RequestError {
         try (
                 Socket socket = new Socket(url.getHost(), url.getDefaultPort());
                 PrintWriter out =
                     new PrintWriter(socket.getOutputStream(), true);
                 BufferedReader in =
                     new BufferedReader(
-                            new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
+                            new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8))
         ) {
             // socket.setSoTimeout(10000);
             writeRequest(out);
@@ -78,16 +119,5 @@ public class Request {
             out.println(header.getKey() + ": " + header.getValue());
         }
         out.println();
-    }
-
-    /**
-     * Test method.
-     */
-    public static void main(String[] args) {
-        Request request = new Request("GET", "http://foo.org/path");
-        PrintWriter writer = new PrintWriter(System.out);
-        request.writeRequest(writer);
-        writer.flush();
-        writer.close();
     }
 }

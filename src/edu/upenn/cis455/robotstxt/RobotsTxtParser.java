@@ -20,6 +20,15 @@ class RobotsTxtParser {
         this.reader = reader;
     }
 
+    private static String stripComments(String line) {
+        if (line == null) {
+            return null;
+        } else {
+            String[] split = line.split("#");
+            return split[0].trim();
+        }
+    }
+
     RobotsTxt parse() throws IOException, RobotsTxtSyntaxError {
         noAgentState();
         int crawlDelay = thisAgentCrawlDelay > allAgentsCrawlDelay ? thisAgentCrawlDelay : allAgentsCrawlDelay;
@@ -27,63 +36,110 @@ class RobotsTxtParser {
     }
 
     private void noAgentState() throws IOException, RobotsTxtSyntaxError {
-        String line;
-        while (Objects.equals(line = reader.readLine(), "")) ;
-        if (line == null) {
-            return;
-        } else {
-            Directive directive = Directive.parse(line);
-            if (directive.isNameEqual("user-agent")) {
-                switch (directive.value) {
-                    case "*":
-                        relevantAgentState(false);
-                    case XPathCrawler.name:
-                        relevantAgentState(true);
-                    default:
-                        foreignAgentState();
-                }
+        while (true) {
+            String line = stripComments(reader.readLine());
+            if (line == null) {
+                return;
             } else {
-                throw new RobotsTxtSyntaxError("Record must begin with User-Agent directive.");
+                Directive directive = Directive.parse(line);
+                if (directive != null) {
+                    if (directive.isNameEqual("user-agent")) {
+                        switchAgentState(directive);
+                        return;
+                    } else {
+                        throw new RobotsTxtSyntaxError("Record must begin with User-Agent directive.");
+                    }
+                }
             }
+        }
+    }
+
+    private void switchAgentState(Directive directive) throws IOException, RobotsTxtSyntaxError {
+        switch (directive.value) {
+            case "*":
+                relevantAgentState(false);
+                return;
+            case XPathCrawler.name:
+                relevantAgentState(true);
+                return;
+            default:
+                foreignAgentState();
         }
     }
 
     private void foreignAgentState() throws IOException, RobotsTxtSyntaxError {
-        String line;
-        do {
-            line = reader.readLine();
-        } while (!Objects.equals(line, "") && line != null);
-        if (line != null) {
-            noAgentState();
+        while (true) {
+            String line = stripComments(reader.readLine());
+            if (line == null) {
+                return;
+            } else {
+                Directive directive = Directive.parse(line);
+                if (directive != null && directive.isNameEqual("user-agent")) {
+                    switchAgentState(directive);
+                    return;
+                }
+            }
         }
     }
 
     private void relevantAgentState(boolean thisAgent) throws IOException, RobotsTxtSyntaxError {
-        String line = reader.readLine();
-        while (line != null && !line.equals("")) {
-            Directive directive = Directive.parse(line);
-            if (directive.isNameEqual("disallow")) {
-                disallow.add(directive.value);
-            } else if (directive.isNameEqual("crawl-delay")) {
-                int delay;
-                try {
-                    delay = Integer.parseInt(directive.value);
-                } catch (NumberFormatException e) {
-                    throw new RobotsTxtSyntaxError("Crawl-Delay must be a number");
-                }
 
-                if (thisAgent) {
-                    thisAgentCrawlDelay = delay;
-                } else {
-                    allAgentsCrawlDelay = delay;
+        while (true) {
+            String line = stripComments(reader.readLine());
+            if (line == null) {
+                return;
+            } else {
+                Directive directive = Directive.parse(line);
+                if (directive == null) {
+                    return;
+                } else if (directive.isNameEqual("user-agent")) {
+                    switchAgentState(directive);
+                    return;
+                } else if (directive.isNameEqual("disallow")) {
+                    disallow.add(directive.value);
+                } else if (directive.isNameEqual("crawl-delay")) {
+                    int delay;
+                    try {
+                        delay = Integer.parseInt(directive.value);
+                    } catch (NumberFormatException e) {
+                        throw new RobotsTxtSyntaxError("Crawl-Delay must be a number");
+                    }
+
+                    if (thisAgent) {
+                        thisAgentCrawlDelay = delay;
+                    } else {
+                        allAgentsCrawlDelay = delay;
+                    }
                 }
             }
+        }
 
-            line = reader.readLine();
-        }
-        if (line != null) {
-            noAgentState();
-        }
+
+//        String line = stripComments(reader.readLine());
+//        while (line != null && !line.equals("")) {
+//            Directive directive = Directive.parse(line);
+//            if (directive.isNameEqual("disallow")) {
+//                disallow.add(directive.value);
+//            } else if (directive.isNameEqual("crawl-delay")) {
+//                int delay;
+//                try {
+//                    delay = Integer.parseInt(directive.value);
+//                } catch (NumberFormatException e) {
+//                    throw new RobotsTxtSyntaxError("Crawl-Delay must be a number");
+//                }
+//
+//                if (thisAgent) {
+//                    thisAgentCrawlDelay = delay;
+//                } else {
+//                    allAgentsCrawlDelay = delay;
+//                }
+//            }
+//
+//            line = stripComments(reader.readLine());
+//        }
+//        if (line != null) {
+//            noAgentState();
+//        }
     }
 }
 
@@ -98,6 +154,10 @@ class Directive {
     }
 
     static Directive parse(String lineString) throws RobotsTxtSyntaxError {
+        if (Objects.equals(lineString, "")) {
+            return null;
+        }
+
         String[] nameValue = lineString.split(": ");
         if (nameValue.length == 2) {
             return new Directive(nameValue[0], nameValue[1].trim());

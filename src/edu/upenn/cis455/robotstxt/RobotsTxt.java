@@ -24,11 +24,35 @@ public class RobotsTxt {
         this.domain = domain;
         this.crawlDelay = crawlDelay;
         this.disallow = disallow;
+        this.lastAccess = Instant.now().minusSeconds(10);
     }
 
     static RobotsTxt fetch(String domain) throws IOException, RequestError, RobotsTxtSyntaxError {
-        URL robotsTxtUrl = new URL("http", domain, "/robots.txt");
+        URL robotsTxtUrl = new URL("http", domain, "/robots.txt");  // TODO restore http
         Request request = new Request("GET", robotsTxtUrl);
+        Response response = request.fetch();
+
+        switch (response.getStatus()) {
+            case OK_200:
+                BufferedReader stringReader = new BufferedReader(new StringReader(response.getBody()));
+                return (new RobotsTxtParser(domain, stringReader)).parse();
+            case MOVED_PERMANENTLY_301:
+            case FOUND_302:
+            case TEMPORARY_REDIRECT_307:
+            case PERMANENT_REDIRECT_308:
+                String location = response.getHeader("Location");
+                if (location == null) {
+                    return null;
+                } else {
+                    return fetchRedirect(domain, new URL(robotsTxtUrl, location));
+                }
+            default:
+                return null;
+        }
+    }
+
+    static RobotsTxt fetchRedirect(String domain, URL location) throws IOException, RequestError, RobotsTxtSyntaxError {
+        Request request = new Request("GET", location);
         Response response = request.fetch();
 
         switch (response.getStatus()) {

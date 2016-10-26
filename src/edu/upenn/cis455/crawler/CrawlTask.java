@@ -10,6 +10,7 @@ import edu.upenn.cis455.storage.DBWrapper;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.w3c.tidy.DOMElementImpl;
 import org.w3c.tidy.Tidy;
 
 import java.io.IOException;
@@ -39,12 +40,13 @@ class CrawlTask {
     }
 
     private static String getAttribute(Node n, String s) {
-        Node nameAttr = n.getAttributes().getNamedItem("name");
-        if (nameAttr != null) {
-            return nameAttr.getTextContent();
-        } else {
-            return null;
-        }
+        return ((DOMElementImpl) n).getAttribute("href");
+//        Node nameAttr = n.getAttributes().getNamedItem("name");
+//        if (nameAttr != null) {
+//            return nameAttr.getTextContent();
+//        } else {
+//            return null;
+//        }
     }
 
     List<URL> run() {
@@ -58,7 +60,7 @@ class CrawlTask {
                         return makeHeadRequest();
                     } else {
                         // time hasn't elapsed yet; add the URL to the end of the queue
-                        return Collections.singletonList(url);
+                        return new LinkedList<>(Collections.singletonList(url));
                     }
                 }
             } else {
@@ -74,7 +76,12 @@ class CrawlTask {
 
     private List<URL> makeHeadRequest() throws RequestError, IOException {
         Request headRequest = new Request("HEAD", url);
-        setIfModifiedSince(headRequest);
+
+        edu.upenn.cis455.storage.Document document = DBWrapper.getDocument(url);
+        if (document != null) {
+            setIfModifiedSince(headRequest, document.getDateRetrieved());
+        }
+
         Response headResponse = headRequest.fetch();
 
         switch (headResponse.getStatus()) {
@@ -91,17 +98,25 @@ class CrawlTask {
                 reportSkippingUrl("Temporary redirects not supported.");
                 return new LinkedList<>();
             case NOT_MODIFIED_304:
-                reportSkippingUrl("Not modified since the last retrieval.");
-                return new LinkedList<>();
+                return handleNotModified(document);
             default:
                 reportSkippingUrl("Request or server error");
                 return new LinkedList<>();
         }
     }
 
+    private List<URL> handleNotModified(edu.upenn.cis455.storage.Document document) throws MalformedURLException {
+        reportSkippingUrl("Not modified since the last retrieval.");
+        if (document.isHtml()) {
+            return processHtml(document.getText());
+        } else {
+            return new LinkedList<>();
+        }
+    }
+
     private List<URL> makeGetRequest() throws RequestError, IOException {
         Request request = new Request("GET", url);
-        setIfModifiedSince(request);
+//        setIfModifiedSince(request);
         Response response = request.fetch();
 
         if (response.getStatus() == HttpStatus.OK_200 && checkResponseHeaders(response)) {
@@ -119,23 +134,23 @@ class CrawlTask {
                 return processXml(response, contentLength);
             case HTML:
             case XHTML:
-                return processHtml(response);
+                return processHtml(response.getBody());
             default:
                 return new LinkedList<>();
         }
     }
 
-    private List<URL> processHtml(Response response) throws MalformedURLException {
+    private List<URL> processHtml(String content) throws MalformedURLException {
         Tidy tidy = new Tidy();
         tidy.setXHTML(true);
         StringWriter stringWriter = new StringWriter();
-        Document document = tidy.parseDOM(new StringReader(response.getBody()), stringWriter);
+        Document document = tidy.parseDOM(new StringReader(content), stringWriter);
 
         String metaRobots = getMetaRobots(document);
 
         if (metaRobots == null || !metaRobots.contains("noindex")) {
             String xhtml = stringWriter.toString();
-            DBWrapper.addDocument(url, xhtml);
+            DBWrapper.addDocument(url, xhtml, true);
         }
 
         if (metaRobots == null || !metaRobots.contains("nofollow")) {
@@ -190,7 +205,7 @@ class CrawlTask {
     }
 
     private List<URL> processXml(Response response, int contentLength) throws IOException {
-        DBWrapper.addDocument(url, response.getBody());
+        DBWrapper.addDocument(url, response.getBody(), false);
         return new LinkedList<>();
     }
 
@@ -229,8 +244,7 @@ class CrawlTask {
         return true;
     }
 
-    private void setIfModifiedSince(Request headRequest) {
-        Date lastRetrievedDate = DBWrapper.getDocumentDate(url);
+    private void setIfModifiedSince(Request headRequest, Date lastRetrievedDate) {
         if (lastRetrievedDate != null) {
             ZonedDateTime zonedDateTime = ZonedDateTime.ofInstant(lastRetrievedDate.toInstant(), ZoneOffset.UTC);
             String formattedDate = zonedDateTime.format(DateTimeFormatter.RFC_1123_DATE_TIME);
@@ -239,7 +253,7 @@ class CrawlTask {
     }
 
     private void reportSkippingUrl(String reason) {
-        System.out.println(String.format("Skippig %s; %s", url, reason));
+        System.out.println(String.format("Skipping %s; %s", url, reason));
     }
 
     private ContentType getContentType(String contentType) {

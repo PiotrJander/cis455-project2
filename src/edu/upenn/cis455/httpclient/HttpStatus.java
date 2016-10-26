@@ -6,6 +6,8 @@ public enum HttpStatus {
     MOVED_PERMANENTLY_301(301, "Moved Permanently"),
     FOUND_302(302, "Found"),
     NOT_MODIFIED_304(304, "Not Modified"),
+    TEMPORARY_REDIRECT_307(307, "Temporary Redirect"),
+    PERMANENT_REDIRECT_308(308, "Permanent Redirect"),
     BAD_REQUEST_400(400, "Bad Request"),
     NOT_FOUND_404(404, "Not Found"),
     METHOD_NOT_ALLOWED_405(405, "Method Not Allowed"),
@@ -19,14 +21,6 @@ public enum HttpStatus {
     HttpStatus(int statusCode, String name) {
         this.statusCode = statusCode;
         this.name = name;
-    }
-
-    int getStatusCode() {
-        return statusCode;
-    }
-
-    String getName() {
-        return name;
     }
 
     public static HttpStatus getByCode(int statusCode) {
@@ -48,5 +42,13 @@ public enum HttpStatus {
             }
         } catch (NumberFormatException ignore) {}
         throw new IllegalArgumentException();
+    }
+
+    int getStatusCode() {
+        return statusCode;
+    }
+
+    String getName() {
+        return name;
     }
 }

@@ -7,10 +7,7 @@ import edu.upenn.cis455.storage.DBWrapper;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class XPathCrawler {
 
@@ -29,22 +26,6 @@ public class XPathCrawler {
     }
 
     XPathCrawler() {
-    }
-
-    private void crawl() {
-        while (visitedDocumentsCount < maxDocuments && !frontier.isEmpty()) {
-            URL next = frontier.remove();
-            CrawlTask task = new CrawlTask(next);
-            List<URL> newUrls = task.run();
-            visited.add(next);
-            for (URL url : newUrls) {
-                if (!visited.contains(url)) {
-                    frontier.add(url);
-                }
-            }
-            incrementVisitedDocumentCount();
-        }
-        DBWrapper.close();
     }
 
     private static void incrementVisitedDocumentCount() {
@@ -102,5 +83,27 @@ public class XPathCrawler {
     private static void usage() {
         System.err.println("java -jar crawler.jar <start-startUrl> <berkeley-db-evn-dir> <max-size> [max-documents]");
         System.exit(1);
+    }
+
+    private void crawl() {
+        while (visitedDocumentsCount < maxDocuments && !frontier.isEmpty()) {
+            URL next = frontier.remove();
+            CrawlTask task = new CrawlTask(next);
+            List<URL> newUrls = task.run();
+
+            // in the special case that crawl delay hasn't elapsed yet, we move the URL
+            // to the end of the queue; and we don't add it to visited
+            if (newUrls.size() > 0 && !Objects.equals(newUrls.get(0), next)) {
+                incrementVisitedDocumentCount();
+                visited.add(next);
+            }
+
+            for (URL url : newUrls) {
+                if (!visited.contains(url)) {
+                    frontier.add(url);
+                }
+            }
+        }
+        DBWrapper.close();
     }
 }
