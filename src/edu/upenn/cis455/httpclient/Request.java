@@ -57,19 +57,14 @@ public class Request {
         try (
                 Socket socket = new Socket(url.getHost(), url.getDefaultPort());
                 PrintWriter out =
-                    new PrintWriter(socket.getOutputStream(), true)
-//                BufferedReader in =
-//                    new BufferedReader(
-//                            new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
-        ) {
-            BufferedReader in =
+                    new PrintWriter(socket.getOutputStream(), true);
+                BufferedReader in =
                     new BufferedReader(
                             new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
-//            socket.setSoTimeout(10000);
-
+        ) {
+            // socket.setSoTimeout(10000);
             writeRequest(out);
-
-            return getResponse(in);
+            return (new Response(in, method)).parse();
         } catch (IOException | BadResponseException e) {
             throw new RequestError();
         }
@@ -81,12 +76,6 @@ public class Request {
             out.println(header.getKey() + ": " + header.getValue());
         }
         out.println();
-    }
-
-    private Response getResponse(BufferedReader in) throws IOException, BadResponseException {
-        Response response = new Response(in);
-        response.parse();
-        return response;
     }
 
     /**

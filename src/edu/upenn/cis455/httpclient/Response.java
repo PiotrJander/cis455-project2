@@ -11,17 +11,29 @@ import java.util.regex.Pattern;
 
 public class Response {
 
+    private HttpMethod requestMethod;
     private BufferedReader in;
     private HttpStatus status;
     private Map<String, String> headers = new HashMap<>();
+    private String body;
 
-    public Response(BufferedReader in) {
+    public Response(BufferedReader in, HttpMethod requestMethod) {
         this.in = in;
+        this.requestMethod = requestMethod;
     }
 
-    void parse() throws IOException, BadResponseException {
+    Response parse() throws IOException, BadResponseException {
         parseFirstLine();
         parseHeaders();
+
+        Optional<Integer> contentLength = getIntHeader("Content-Length");
+        if (requestMethod != HttpMethod.HEAD && contentLength.isPresent()) {
+            int cl = contentLength.orElse(null);
+            char[] buffer = new char[cl];
+            int length = in.read(buffer, 0, cl);
+            body = String.valueOf(buffer, 0, length);
+        }
+        return this;
     }
 
     private void parseHeaders() throws IOException {
@@ -60,9 +72,13 @@ public class Response {
         return Optional.ofNullable(value).map(Integer::parseInt);
     }
 
-    public BufferedReader getReader() {
-        return in;
+    public String getBody() {
+        return body;
     }
+
+    //    public BufferedReader getReader() {
+//        return in;
+//    }
 }
 
 class BadResponseException extends Exception {}

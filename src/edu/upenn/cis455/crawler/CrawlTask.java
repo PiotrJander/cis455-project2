@@ -6,9 +6,11 @@ import edu.upenn.cis455.httpclient.RequestError;
 import edu.upenn.cis455.httpclient.Response;
 import edu.upenn.cis455.storage.DBWrapper;
 import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
 import org.w3c.tidy.Tidy;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.SocketTimeoutException;
@@ -47,6 +49,7 @@ class CrawlTask {
         switch (headResponse.getStatus()) {
             case OK_200:
                 if (checkResponseHeaders(headResponse)) {
+                    System.out.println("Downloading " + url);
                     return makeGetRequest();
                 } else {
                     return new LinkedList<>();
@@ -58,7 +61,6 @@ class CrawlTask {
                 return new LinkedList<>();
             case NOT_MODIFIED_304:
                 reportSkippingUrl("Not modified since the last retrieval.");
-                // TODO add urls to frontier anyway
                 return new LinkedList<>();
             default:
                 reportSkippingUrl("Request or server error");
@@ -67,47 +69,53 @@ class CrawlTask {
     }
 
     private List<URL> makeGetRequest() throws RequestError, IOException {
-        Request getRequest = new Request("GET", url);
-        setIfModifiedSince(getRequest);
-        Response getResponse = getRequest.fetch();
+        Request request = new Request("GET", url);
+        setIfModifiedSince(request);
+        Response response = request.fetch();
 
-        if (getResponse.getStatus() == HttpStatus.OK_200 && checkResponseHeaders(getResponse)) {
-            return processDocument(getResponse);
+        if (response.getStatus() == HttpStatus.OK_200 && checkResponseHeaders(response)) {
+            return processDocument(response);
         } else {
             return new LinkedList<>();
         }
     }
 
-    private List<URL> processDocument(Response getResponse) throws IOException {
-        int contentLength = getResponse.getIntHeader("Content-Length").orElse(null);
-        ContentType contentType = getContentType(getResponse.getHeader("Content-Type"));
+    private List<URL> processDocument(Response response) throws IOException {
+        int contentLength = response.getIntHeader("Content-Length").orElse(null);
+        ContentType contentType = getContentType(response.getHeader("Content-Type"));
         switch (contentType) {
             case XML:
-                return processXml(getResponse, contentLength);
+                return processXml(response, contentLength);
             case HTML:
             case XHTML:
-                processHtml(getResponse);
+                return processHtml(response);
             default:
                 return new LinkedList<>();
         }
     }
 
-    private List<URL> processHtml(Response getResponse) {
+    private List<URL> processHtml(Response response) {
         Tidy tidy = new Tidy();
         tidy.setXHTML(true);
         StringWriter stringWriter = new StringWriter();
-        Document document = tidy.parseDOM(getResponse.getReader(), stringWriter);
+        Document document = tidy.parseDOM(new StringReader(response.getBody()), stringWriter);
+
+        // meta robots
+        NodeList metaTags = document.getElementsByTagName("meta");
+
+
         String xhtml = stringWriter.toString();
         System.out.println(xhtml);  // TODO remove
         DBWrapper.addDocument(url, xhtml);
+        return extractUrls();
+    }
+
+    private List<URL> extractUrls() {
         return new LinkedList<>();
     }
 
-    private List<URL> processXml(Response getResponse, int contentLength) throws IOException {
-        char[] buffer = new char[contentLength];
-        int length = getResponse.getReader().read(buffer, 0, contentLength);
-        String documentText = String.valueOf(buffer, 0, length);
-        DBWrapper.addDocument(url, documentText);
+    private List<URL> processXml(Response response, int contentLength) throws IOException {
+        DBWrapper.addDocument(url, response.getBody());
         return new LinkedList<>();
     }
 
@@ -162,11 +170,11 @@ class CrawlTask {
     private ContentType getContentType(String contentType) {
         if (contentType == null) {
             return ContentType.OTHER;
-        } else if (contentType.equals("text/html")) {
+        } else if (contentType.contains("text/html")) {
             return ContentType.HTML;
-        } else if (contentType.equals("application/xhtml+xml")) {
+        } else if (contentType.contains("application/xhtml+xml")) {
             return ContentType.XHTML;
-        } else if (contentType.equals("text/xml") || contentType.equals("application/xml") || contentType.endsWith("+xml")) {
+        } else if (contentType.contains("text/xml") || contentType.contains("application/xml") || contentType.contains("+xml")) {
             return ContentType.XML;
         } else {
             return ContentType.OTHER;

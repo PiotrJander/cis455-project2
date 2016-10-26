@@ -15,7 +15,7 @@ public class ResponseTest extends TestCase {
                 "\n";
         Response response = new Response(
                 new BufferedReader(
-                        new StringReader(responseText)));
+                        new StringReader(responseText)), HttpMethod.GET);
         response.parse();
         assertEquals(HttpStatus.OK_200, response.getStatus());
         assertEquals("text/html", response.getHeader("Content-Type"));
