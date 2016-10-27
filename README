@@ -8,7 +8,8 @@ Did you complete any extra-credit tasks? If so, which ones?
   No.
 
 Any special instructions for building and running your solution?
-  No.
+  I have Jetty embedded in the app. Use "ant embedded-jetty" to start the servlet app.
+  Of course, "ant servlet" works too, and copies the war file to Jetty's directory, hardcoded to /usr/share/jetty/webapps/.
 
 Did you personally write _all_ the code you are submitting
 (other than code from the course web page)?

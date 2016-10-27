@@ -80,9 +80,19 @@
         <mkdir dir="${classes.dir}"/>
         <javac srcdir="src/edu/upenn/cis455/servlet" destdir="${classes.dir}" debug="on" deprecation="off" optimize="on" includeAntRuntime="no">
             <classpath>
-                <!--<filelist>-->
-                    <!--<file name="${inputlib.dir}${file.separator}servlet-api.jar"/>-->
-                <!--</filelist>-->
+                <fileset dir="${inputlib.dir}">
+                    <include name="*.jar"/>
+                </fileset>
+            </classpath>
+        </javac>
+    </target>
+
+    <target name="compile-embedded-jetty" description="Compiles the embedded Jetty">
+        <mkdir dir="${classes.dir}"/>
+        <javac srcdir="src/edu/upenn/cis455/" destdir="${classes.dir}" debug="on" deprecation="off" optimize="on"
+               includeAntRuntime="no">
+            <include name="EmbeddedJetty.java"/>
+            <classpath>
                 <fileset dir="${inputlib.dir}">
                     <include name="*.jar"/>
                 </fileset>
@@ -164,6 +174,17 @@
 
     <target name="servlet" depends="servlet-war" description="Copies servlet.war to Jetty webapps directory.">
         <copy file="servlet.war" todir="/usr/share/jetty/webapps/"/>
+    </target>
+
+    <target name="embedded-jetty" depends="servlet-war,compile-embedded-jetty" description="Runs embedded Jetty.">
+        <java failonerror="true" fork="true" classname="edu.upenn.cis455.EmbeddedJetty">
+            <classpath>
+                <pathelement location="${classes.dir}"/>
+                <fileset dir="${inputlib.dir}">
+                    <include name="*.jar"/>
+                </fileset>
+            </classpath>
+        </java>
     </target>
 
     <target name="build" depends="crawler-jar,servlet-war">
