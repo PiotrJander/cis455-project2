@@ -7,6 +7,7 @@ import edu.upenn.cis455.httpclient.Response;
 import edu.upenn.cis455.robotstxt.RobotsTxt;
 import edu.upenn.cis455.robotstxt.RobotsTxtMapping;
 import edu.upenn.cis455.storage.DBWrapper;
+import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -33,6 +34,8 @@ enum ContentType {
 
 class CrawlTask {
 
+    private static Logger log = Logger.getLogger(CrawlTask.class);
+
     private URL url;
 
     CrawlTask(URL url) {
@@ -41,12 +44,6 @@ class CrawlTask {
 
     private static String getAttribute(Node n, String s) {
         return ((DOMElementImpl) n).getAttribute("href");
-//        Node nameAttr = n.getAttributes().getNamedItem("name");
-//        if (nameAttr != null) {
-//            return nameAttr.getTextContent();
-//        } else {
-//            return null;
-//        }
     }
 
     List<URL> run() {
@@ -63,6 +60,8 @@ class CrawlTask {
                         return new LinkedList<>(Collections.singletonList(url));
                     }
 //                    return makeHeadRequest();
+                } else {
+                    printRetrievalStatus("Restricted. Not downloading");
                 }
             } else {
                 return makeHeadRequest();
@@ -88,7 +87,7 @@ class CrawlTask {
         switch (headResponse.getStatus()) {
             case OK_200:
                 if (checkResponseHeaders(headResponse)) {
-                    System.out.println("Downloading " + url);
+                    printRetrievalStatus("Downloading");
                     return makeGetRequest();
                 } else {
                     return new LinkedList<>();
@@ -96,18 +95,18 @@ class CrawlTask {
             case MOVED_PERMANENTLY_301:
                 return handleMovedPermanently(headResponse);
             case FOUND_302:
-                reportSkippingUrl("Temporary redirects not supported.");
+                logRetrievalStatus("Temporary redirects not supported.");
                 return new LinkedList<>();
             case NOT_MODIFIED_304:
                 return handleNotModified(document);
             default:
-                reportSkippingUrl("Request or server error");
+                logRetrievalStatus("Request or server error");
                 return new LinkedList<>();
         }
     }
 
     private List<URL> handleNotModified(edu.upenn.cis455.storage.Document document) throws MalformedURLException {
-        reportSkippingUrl("Not modified since the last retrieval.");
+        printRetrievalStatus("Not modified");
         if (document.isHtml()) {
             return processHtml(document.getText());
         } else {
@@ -223,24 +222,24 @@ class CrawlTask {
 
     private boolean checkResponseHeaders(Response headResponse) {
         if (headResponse.getHeader("Transfer-Encoding") != null) {
-            reportSkippingUrl("Chunked encoding not supported.");
+            logRetrievalStatus("Chunked encoding not supported.");
             return false;
         }
 
         Optional<Integer> contentLength = headResponse.getIntHeader("Content-Length");
         if (contentLength.isPresent()) {
             if (contentLength.orElse(null) > XPathCrawler.getMaxSize()) {
-                reportSkippingUrl("Content-Length exceeds the limit.");
+                logRetrievalStatus("Content-Length exceeds the limit.");
                 return false;
             }
         } else {
-            reportSkippingUrl("Content-Length not specified.");
+            logRetrievalStatus("Content-Length not specified.");
             return false;
         }
 
         ContentType contentType = getContentType(headResponse.getHeader("Content-Type"));
         if (contentType == ContentType.OTHER) {
-            reportSkippingUrl("Content type other than HTML or XML");
+            logRetrievalStatus("Content type other than HTML or XML");
             return false;
         }
 
@@ -255,8 +254,13 @@ class CrawlTask {
         }
     }
 
-    private void reportSkippingUrl(String reason) {
-        System.out.println(String.format("Skipping %s; %s", url, reason));
+    private void logRetrievalStatus(String reason) {
+        printRetrievalStatus("Not Downloading");
+        log.warn(String.format("Skipping %s; %s", url, reason));
+    }
+
+    private void printRetrievalStatus(String s) {
+        System.out.format("%s: %s\n", url, s);
     }
 
     private ContentType getContentType(String contentType) {

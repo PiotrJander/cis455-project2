@@ -1,6 +1,5 @@
 package edu.upenn.cis455.robotstxt;
 
-import edu.upenn.cis455.crawler.XPathCrawler;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -59,7 +58,7 @@ class RobotsTxtParser {
             case "*":
                 relevantAgentState(false);
                 return;
-            case XPathCrawler.name:
+            case "cis455crawler":
                 relevantAgentState(true);
                 return;
             default:
