@@ -112,33 +112,6 @@ class RobotsTxtParser {
                 }
             }
         }
-
-
-//        String line = stripComments(reader.readLine());
-//        while (line != null && !line.equals("")) {
-//            Directive directive = Directive.parse(line);
-//            if (directive.isNameEqual("disallow")) {
-//                disallow.add(directive.value);
-//            } else if (directive.isNameEqual("crawl-delay")) {
-//                int delay;
-//                try {
-//                    delay = Integer.parseInt(directive.value);
-//                } catch (NumberFormatException e) {
-//                    throw new RobotsTxtSyntaxError("Crawl-Delay must be a number");
-//                }
-//
-//                if (thisAgent) {
-//                    thisAgentCrawlDelay = delay;
-//                } else {
-//                    allAgentsCrawlDelay = delay;
-//                }
-//            }
-//
-//            line = stripComments(reader.readLine());
-//        }
-//        if (line != null) {
-//            noAgentState();
-//        }
     }
 }
 
