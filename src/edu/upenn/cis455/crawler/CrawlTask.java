@@ -141,7 +141,7 @@ class CrawlTask {
 
         if (metaRobots == null || !metaRobots.contains("noindex")) {
             String xhtml = stringWriter.toString();
-            DBWrapper.addDocument(url, xhtml, true);
+            DBWrapper.addDocument(url, xhtml, "html");
         }
 
         if (metaRobots == null || !metaRobots.contains("nofollow")) {
@@ -184,19 +184,19 @@ class CrawlTask {
     }
 
     private URL getContextUrl(Document document) throws MalformedURLException {
-        NodeList baseTagList = document.getElementsByTagName("base");
-        if (baseTagList.getLength() > 0) {
-            Node baseTag = baseTagList.item(0);
-            String href = getAttribute(baseTag, "href");
-            if (href != null) {
-                return new URL(url, href);
-            }
-        }
+//        NodeList baseTagList = document.getElementsByTagName("base");
+//        if (baseTagList.getLength() > 0) {
+//            Node baseTag = baseTagList.item(0);
+//            String href = getAttribute(baseTag, "href");
+//            if (href != null) {
+//                return new URL(url, href);
+//            }
+//        }
         return url;
     }
 
     private List<URL> processXml(String responseBody) throws IOException {
-        DBWrapper.addDocument(url, responseBody, false);
+        DBWrapper.addDocument(url, responseBody, "html");
         return new LinkedList<>();
     }
 

@@ -80,8 +80,8 @@ public class DBWrapper {
         return Optional.ofNullable(userAccessor.userByUsername.get(username)).map(user -> user.password);
     }
 
-    public static void addDocument(URL url, String text, boolean isHtml) {
-        documentAccessor.documentByUrl.put(new Document(url, text, isHtml));
+    public static void addDocument(URL url, String text, String contentType) {
+        documentAccessor.documentByUrl.put(new Document(url, text, contentType));
     }
 
     public static Document getDocument(URL url) {

@@ -30,7 +30,7 @@ import java.util.*;
 public class CrawlerBolt implements IRichBolt {
 
     private static Logger log = Logger.getLogger(CrawlerBolt.class);
-    private Fields fields = new Fields("contentType", "document");
+    private Fields fields = new Fields("url", "contentType", "document", "shouldWriteToDB");
     private String executorId = UUID.randomUUID().toString();
     private OutputCollector collector;
 
@@ -91,7 +91,7 @@ public class CrawlerBolt implements IRichBolt {
         if (response.getStatus() == HttpStatus.OK_200 && shouldCrawlUrl(response)) {
             printRetrievalStatus("Downloading");
             String contentType = getContentType(response);
-            collector.emit(new Values<>(contentType, response.getBody()));
+            collector.emit(new Values<>(url, contentType, response.getBody(), 1));
         } else {
             notDownloadingLogReason("HEAD suceeded but GET failed");
         }
@@ -153,7 +153,12 @@ public class CrawlerBolt implements IRichBolt {
 
     private void handleNotModified(Document document) throws MalformedURLException {
         printRetrievalStatus("Not modified");
-        collector.emit(new Values<>(document.getContentType(), document.getText()));
+        String contentType = document.getContentType();
+        if (contentType.equals("html") || contentType.equals("xhtml")) {
+            // if the document was not modified, ProcessDocumentBolt will only extract hyperlinks from HTML docs
+            // no need to emit XML documents if not modified
+            collector.emit(new Values<>(url, contentType, document.getText(), 0));
+        }
     }
 
     private void handleMovedPermanently(Response headResponse) throws MalformedURLException {
