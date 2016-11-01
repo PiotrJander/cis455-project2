@@ -1,15 +1,15 @@
 package test.edu.upenn.cis.stormlite;
 
-import org.apache.log4j.Logger;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import edu.upenn.cis.stormlite.Config;
 import edu.upenn.cis.stormlite.LocalCluster;
 import edu.upenn.cis.stormlite.Topology;
 import edu.upenn.cis.stormlite.TopologyBuilder;
 import edu.upenn.cis.stormlite.tuple.Fields;
+import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 
 /**
  * Simple word counter test case, largely derived from
@@ -34,13 +34,15 @@ import edu.upenn.cis.stormlite.tuple.Fields;
  * limitations under the License.
  */
 public class TestWordCount {
-	static Logger log = Logger.getLogger(TestWordCount.class);
-
 	private static final String WORD_SPOUT = "WORD_SPOUT";
     private static final String COUNT_BOLT = "COUNT_BOLT";
     private static final String PRINT_BOLT = "PRINT_BOLT";
+    static Logger log = Logger.getLogger(TestWordCount.class);
     
     public static void main(String[] args) throws Exception {
+        BasicConfigurator.configure();
+        log.setLevel(Level.INFO);
+
         Config config = new Config();
 
         WordSpout spout = new WordSpout();
