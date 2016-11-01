@@ -4,8 +4,6 @@ import edu.upenn.cis455.httpclient.HttpStatus;
 import edu.upenn.cis455.httpclient.Request;
 import edu.upenn.cis455.httpclient.RequestError;
 import edu.upenn.cis455.httpclient.Response;
-import edu.upenn.cis455.robotstxt.RobotsTxt;
-import edu.upenn.cis455.robotstxt.RobotsTxtMapping;
 import edu.upenn.cis455.storage.DBWrapper;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
@@ -18,24 +16,15 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
-import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
-enum ContentType {
-    HTML,
-    XHTML,
-    XML,
-    OTHER
-}
-
 class CrawlTask {
 
     private static Logger log = Logger.getLogger(CrawlTask.class);
-
     private URL url;
 
     CrawlTask(URL url) {
@@ -47,30 +36,30 @@ class CrawlTask {
     }
 
     List<URL> run() {
-        try {
-            // check robots.txt and maybe start making requests
-            RobotsTxt robotsTxt = RobotsTxtMapping.get(url.getHost());
-            if (robotsTxt != null) {
-                if (robotsTxt.isPathAllowed(url.getPath())) {
-                    if (robotsTxt.isTimeElapsed()) {
-                        robotsTxt.updateLastAccessedTime();
-                        return makeHeadRequest();
-                    } else {
-                        // time hasn't elapsed yet; add the URL to the end of the queue
-                        return new LinkedList<>(Collections.singletonList(url));
-                    }
-//                    return makeHeadRequest();
-                } else {
-                    printRetrievalStatus("Restricted. Not downloading");
-                }
-            } else {
-                return makeHeadRequest();
-            }
-        } catch (SocketTimeoutException e) {
-            System.out.println("Connection timeout.");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+//        try {
+//            // check robots.txt and maybe start making requests
+//            RobotsTxt robotsTxt = new RobotsTxt();
+//            if (robotsTxt != null) {
+//                if (robotsTxt.isPathAllowed(url.getPath())) {
+//                    if (robotsTxt.isTimeElapsed()) {
+//                        robotsTxt.updateLastAccessedTime();
+//                        return makeHeadRequest();
+//                    } else {
+//                        // time hasn't elapsed yet; add the URL to the end of the queue
+//                        return new LinkedList<>(Collections.singletonList(url));
+//                    }
+////                    return makeHeadRequest();
+//                } else {
+//                    printRetrievalStatus("Restricted. Not downloading");
+//                }
+//            } else {
+//                return makeHeadRequest();
+//            }
+//        } catch (SocketTimeoutException e) {
+//            System.out.println("Connection timeout.");
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
         return new LinkedList<>();
     }
 
@@ -107,11 +96,11 @@ class CrawlTask {
 
     private List<URL> handleNotModified(edu.upenn.cis455.storage.Document document) throws MalformedURLException {
         printRetrievalStatus("Not modified");
-        if (document.isHtml()) {
-            return processHtml(document.getText());
-        } else {
-            return new LinkedList<>();
-        }
+//        if (document.isHtml()) {
+//            return processHtml(document.getText());
+//        } else {
+//        }
+        return new LinkedList<>();
     }
 
     private List<URL> makeGetRequest() throws RequestError, IOException {
@@ -131,7 +120,7 @@ class CrawlTask {
         ContentType contentType = getContentType(response.getHeader("Content-Type"));
         switch (contentType) {
             case XML:
-                return processXml(response, contentLength);
+                return processXml(response.getBody());
             case HTML:
             case XHTML:
                 return processHtml(response.getBody());
@@ -206,8 +195,8 @@ class CrawlTask {
         return url;
     }
 
-    private List<URL> processXml(Response response, int contentLength) throws IOException {
-        DBWrapper.addDocument(url, response.getBody(), false);
+    private List<URL> processXml(String responseBody) throws IOException {
+        DBWrapper.addDocument(url, responseBody, false);
         return new LinkedList<>();
     }
 
@@ -275,6 +264,13 @@ class CrawlTask {
         } else {
             return ContentType.OTHER;
         }
+    }
+
+    private enum ContentType {
+        HTML,
+        XHTML,
+        XML,
+        OTHER
     }
 }
 

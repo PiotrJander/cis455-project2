@@ -10,18 +10,19 @@ import java.util.Date;
 @Entity
 public class Document {
 
+    @SuppressWarnings("unused")
     @PrimaryKey
     private String url;
 
     private Date dateRetrieved;
     private String text;
-    private boolean isHtml;
+    private String contentType;
 
-    Document(URL url, String text, boolean isHtml) {
+    Document(URL url, String text, String contentType) {
         this.url = url.toString();
         this.dateRetrieved = new Date();
         this.text = text;
-        this.isHtml = isHtml;
+        this.contentType = contentType;
     }
 
     private Document() {
@@ -35,9 +36,7 @@ public class Document {
         return text;
     }
 
-    public boolean isHtml() {
-        return isHtml;
+    public String getContentType() {
+        return contentType;
     }
 }
-
-

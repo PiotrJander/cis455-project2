@@ -8,25 +8,20 @@ import java.util.Map;
 
 public class RobotsTxtMapping {
 
-    private static Map<String, RobotsTxt> mapping = new HashMap<>();
+    private Map<String, RobotsTxt> mapping = new HashMap<>();
 
-    public static RobotsTxt get(String domain) {
-        RobotsTxt robotsTxt = mapping.get(domain);
-        if (robotsTxt == null) {
+    public RobotsTxt get(String domain) {
+        if (mapping.containsKey(domain)) {
+            return mapping.get(domain);
+        } else {
             try {
-                RobotsTxt robotsTxt1 = RobotsTxt.fetch(domain);
-                if (robotsTxt1 == null) {
-                    return null;
-                } else {
-                    mapping.put(domain, robotsTxt1);
-                    return robotsTxt1;
-                }
+                RobotsTxt robotsTxt = RobotsTxt.fetch(domain);
+                mapping.put(domain, robotsTxt);
+                return get(domain);
             } catch (IOException | RobotsTxtSyntaxError | RequestError e) {
                 e.printStackTrace();
                 return null;
             }
-        } else {
-            return robotsTxt;
         }
     }
 }

@@ -18,6 +18,10 @@ public enum UrlFrontier {
         queue.addAll(urls);
     }
 
+    public void add(URL url) {
+        queue.add(url);
+    }
+
     public URL poll() {
         return queue.poll();
     }
