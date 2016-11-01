@@ -13,9 +13,9 @@ import java.net.URL;
 import java.util.Map;
 import java.util.UUID;
 
-public class ProcessDocumentBolt implements IRichBolt {
+public class MergeUrlsBolt implements IRichBolt {
 
-    static Logger log = Logger.getLogger(ProcessDocumentBolt.class);
+    static Logger log = Logger.getLogger(MergeUrlsBolt.class);
     Fields fields = new Fields();
     String executorId = UUID.randomUUID().toString();
 
