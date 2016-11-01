@@ -1,15 +1,5 @@
 package test.edu.upenn.cis.stormlite;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
-
-import org.apache.log4j.Logger;
-
 import edu.upenn.cis.stormlite.OutputFieldsDeclarer;
 import edu.upenn.cis.stormlite.TopologyContext;
 import edu.upenn.cis.stormlite.routers.IStreamRouter;
@@ -17,6 +7,15 @@ import edu.upenn.cis.stormlite.spout.IRichSpout;
 import edu.upenn.cis.stormlite.spout.SpoutOutputCollector;
 import edu.upenn.cis.stormlite.tuple.Fields;
 import edu.upenn.cis.stormlite.tuple.Values;
+import org.apache.log4j.Logger;
+
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.Map;
+import java.util.Random;
+import java.util.UUID;
 
 /**
  * Simple word spout, largely derived from
@@ -116,14 +115,14 @@ public class WordSpout implements IRichSpout {
 		
 		    		for (String word: words) {
 		            	log.debug(getExecutorId() + " emitting " + word);
-		    	        this.collector.emit(new Values<Object>(word));
-		    		}
+						this.collector.emit(new Values<>(word));
+					}
 		    	} else {
 		    		int pos = r.nextInt(words.length);
 		    		String word = words[pos];
 	            	log.debug(getExecutorId() + " emitting " + word);
-	    	        this.collector.emit(new Values<Object>(word));
-		    	}
+					this.collector.emit(new Values<>(word));
+				}
 	    	} catch (IOException e) {
 	    		e.printStackTrace();
 	    	}

@@ -27,20 +27,6 @@ public class UrlSpout implements IRichSpout {
         declarer.declare(new Fields("url"));
     }
 
-    /**
-     * Called when a task for this component is initialized within a
-     * worker on the cluster. It provides the spout with the environment
-     * in which the spout executes.
-     *
-     * @param config    The Storm configuration for this spout. This is
-     *                  the configuration provided to the topology merged in
-     *                  with cluster configuration on this machine.
-     * @param topo
-     * @param collector The collector is used to emit tuples from
-     *                  this spout. Tuples can be emitted at any time, including
-     *                  the open and close methods. The collector is thread-safe
-     *                  and should be saved as an instance variable of this spout
-     */
     @Override
     public void open(Map<String, String> config, TopologyContext topo, SpoutOutputCollector collector) {
         this.collector = collector;
@@ -56,21 +42,11 @@ public class UrlSpout implements IRichSpout {
 //        }
     }
 
-    /**
-     * Called when an ISpout is going to be shutdown.
-     * There is no guarantee that close will be called, because the
-     * supervisor kill -9’s worker processes on the cluster.
-     */
     @Override
     public void close() {
         // TODO
     }
 
-    /**
-     * When this method is called, Storm is requesting that the Spout emit
-     * tuples to the output collector. This method should be non-blocking,
-     * so if the Spout has no tuples to emit, this method should return.
-     */
     @Override
     public void nextTuple() {
         // TODO
