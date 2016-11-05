@@ -18,6 +18,7 @@ public class DBWrapper {
 	private static EntityStore store;
     private static UserAccessor userAccessor;
     private static DocumentAccessor documentAccessor;
+    private static ChannelAccessor channelAccessor;
 
     public static void init(File envHome) throws DatabaseException {
 
@@ -44,6 +45,7 @@ public class DBWrapper {
         /* Initialize the data access object. */
         userAccessor = new UserAccessor(store);
         documentAccessor = new DocumentAccessor(store);
+        channelAccessor = new ChannelAccessor(store);
     }
 
     public static void close() {
@@ -69,12 +71,14 @@ public class DBWrapper {
         }
     }
 
-    public static void addUser(String username, String password) {
-        userAccessor.userByUsername.put(new User(username, password));
-    }
+    // START User
 
     public static void addUser(User user) {
         userAccessor.userByUsername.put(user);
+    }
+
+    public static void addUser(String username, String password) {
+        userAccessor.userByUsername.put(new User(username, password));
     }
 
     public static User getUser(String username) {
@@ -97,6 +101,10 @@ public class DBWrapper {
         documentAccessor.documentByUrl.put(new Document(url, text, contentType));
     }
 
+    // END User
+
+    // START Document
+
     public static Document getDocument(URL url) {
         return getDocument(url.toString());
     }
@@ -105,7 +113,30 @@ public class DBWrapper {
         return documentAccessor.documentByUrl.get(url);
     }
 
-    /* The data accessor class for the entity model. */
+    public static void addChannel(Channel channel) {
+        channelAccessor.channelByName.put(channel);
+    }
+
+    public static Channel getChannel(String name) {
+        return channelAccessor.channelByName.get(name);
+    }
+
+    // END Document
+
+    // START Channel
+
+    public static void addDocumentToChannel(String channelName, String url) {
+        Channel channel = getChannel(channelName);
+        channel.addDocument(url);
+        addChannel(channel);
+    }
+
+    public static void removeDocument(String username, String channelName) {
+        User user = getUser(username);
+        user.removeChannel(channelName);
+        addUser(user);
+    }
+
     private static class UserAccessor {
 
         PrimaryIndex<String,User> userByUsername;
@@ -115,7 +146,6 @@ public class DBWrapper {
         }
     }
 
-    /* The data accessor class for the entity model. */
     private static class DocumentAccessor {
 
         PrimaryIndex<String,Document> documentByUrl;
@@ -124,5 +154,16 @@ public class DBWrapper {
             documentByUrl = store.getPrimaryIndex(String.class, Document.class);
         }
     }
-	
+
+    private static class ChannelAccessor {
+
+        PrimaryIndex<String, Channel> channelByName;
+
+        ChannelAccessor(EntityStore store) throws DatabaseException {
+            channelByName = store.getPrimaryIndex(String.class, Channel.class);
+        }
+    }
+
+    // END Channel
+
 }
