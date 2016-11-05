@@ -73,8 +73,24 @@ public class DBWrapper {
         userAccessor.userByUsername.put(new User(username, password));
     }
 
+    public static void addUser(User user) {
+        userAccessor.userByUsername.put(user);
+    }
+
     public static User getUser(String username) {
         return userAccessor.userByUsername.get(username);
+    }
+
+    public static void addChannelToUser(String username, String channelName) {
+        User user = getUser(username);
+        user.addChannel(channelName);
+        addUser(user);
+    }
+
+    public static void removeChannelFromUser(String username, String channelName) {
+        User user = getUser(username);
+        user.removeChannel(channelName);
+        addUser(user);
     }
 
     public static void addDocument(URL url, String text, String contentType) {
