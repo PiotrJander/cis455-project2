@@ -32,6 +32,11 @@
    </servlet>
 
   <servlet>
+      <servlet-name>subscription</servlet-name>
+      <servlet-class>edu.upenn.cis455.servlet.SubscriptionServlet</servlet-class>
+  </servlet>
+
+    <servlet>
     <servlet-name>create-channel</servlet-name>
     <servlet-class>edu.upenn.cis455.servlet.CreateChannelServlet</servlet-class>
   </servlet>
@@ -60,5 +65,10 @@
     <servlet-name>create-channel</servlet-name>
     <url-pattern>/create/*</url-pattern>
    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>subscription</servlet-name>
+        <url-pattern>/subscribe</url-pattern>
+    </servlet-mapping>
 
 </web-app>
