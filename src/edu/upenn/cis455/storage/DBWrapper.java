@@ -6,12 +6,9 @@ import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.persist.EntityStore;
 import com.sleepycat.persist.PrimaryIndex;
 import com.sleepycat.persist.StoreConfig;
-import com.sleepycat.persist.model.Entity;
-import com.sleepycat.persist.model.PrimaryKey;
 
 import java.io.File;
 import java.net.URL;
-import java.util.Optional;
 
 public class DBWrapper {
 	
@@ -76,8 +73,8 @@ public class DBWrapper {
         userAccessor.userByUsername.put(new User(username, password));
     }
 
-    public static Optional<String> getUserPassword(String username) {
-        return Optional.ofNullable(userAccessor.userByUsername.get(username)).map(user -> user.password);
+    public static User getUser(String username) {
+        return userAccessor.userByUsername.get(username);
     }
 
     public static void addDocument(URL url, String text, String contentType) {
@@ -90,23 +87,6 @@ public class DBWrapper {
 
     public static Document getDocument(String url) {
         return documentAccessor.documentByUrl.get(url);
-    }
-
-    /* An entity class. */
-    @Entity
-    private static class User {
-
-        @PrimaryKey
-        String username;
-
-        String password;
-
-        User(String username, String password) {
-            this.username = username;
-            this.password = password;
-        }
-
-        private User() {} // For deserialization
     }
 
     /* The data accessor class for the entity model. */
