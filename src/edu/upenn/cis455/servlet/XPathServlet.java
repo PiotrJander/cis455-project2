@@ -65,9 +65,7 @@ public class XPathServlet extends HttpServlet {
             writer.println("<html><head><title>Home page</title></head><body>");
 
             writer.println("<p>User name: " + request.getSession().getAttribute("username") + "<a href='/logout'>Logout</a></p>");
-
             channels(writer);
-
             writer.println("</body></html>");
         } catch (IOException e) {
             e.printStackTrace();

@@ -41,6 +41,11 @@
     <servlet-class>edu.upenn.cis455.servlet.CreateChannelServlet</servlet-class>
   </servlet>
 
+    <servlet>
+        <servlet-name>show-channel</servlet-name>
+        <servlet-class>edu.upenn.cis455.servlet.ShowChannelServlet</servlet-class>
+    </servlet>
+
   <servlet-mapping>
      <servlet-name>xpath</servlet-name>
      <url-pattern>/xpath</url-pattern>
@@ -69,6 +74,11 @@
     <servlet-mapping>
         <servlet-name>subscription</servlet-name>
         <url-pattern>/subscribe</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>show-channel</servlet-name>
+        <url-pattern>/show</url-pattern>
     </servlet-mapping>
 
 </web-app>
