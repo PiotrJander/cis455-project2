@@ -7,17 +7,22 @@ import edu.upenn.cis.stormlite.bolt.OutputCollector;
 import edu.upenn.cis.stormlite.routers.IStreamRouter;
 import edu.upenn.cis.stormlite.tuple.Fields;
 import edu.upenn.cis.stormlite.tuple.Tuple;
+import edu.upenn.cis455.UrlFrontier;
 import org.apache.log4j.Logger;
 
 import java.net.URL;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 public class MergeUrlsBolt implements IRichBolt {
 
-    static Logger log = Logger.getLogger(MergeUrlsBolt.class);
-    Fields fields = new Fields();
-    String executorId = UUID.randomUUID().toString();
+    private static Logger log = Logger.getLogger(MergeUrlsBolt.class);
+    private Fields fields = new Fields();
+    private String executorId = UUID.randomUUID().toString();
+
+    private Set<String> visited = new HashSet<>();
 
     @Override
     public String getExecutorId() {
@@ -37,6 +42,10 @@ public class MergeUrlsBolt implements IRichBolt {
     @Override
     public void execute(Tuple input) {
         URL url = (URL) input.getObjectByField("url");
+        if (!visited.contains(url.toString())) {
+            UrlFrontier.INSTANCE.add(url);
+            visited.add(url.toString());
+        }
     }
 
     @Override
@@ -46,7 +55,6 @@ public class MergeUrlsBolt implements IRichBolt {
 
     @Override
     public void setRouter(IStreamRouter router) {
-        // Do nothing
     }
 
     @Override

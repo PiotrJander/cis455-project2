@@ -8,7 +8,6 @@ import edu.upenn.cis.stormlite.Topology;
 import edu.upenn.cis.stormlite.TopologyBuilder;
 import edu.upenn.cis.stormlite.tuple.Fields;
 import org.apache.log4j.BasicConfigurator;
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 /**
@@ -41,7 +40,6 @@ public class TestWordCount {
     
     public static void main(String[] args) throws Exception {
         BasicConfigurator.configure();
-        log.setLevel(Level.INFO);
 
         Config config = new Config();
 

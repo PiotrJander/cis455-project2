@@ -63,12 +63,16 @@ public class CrawlerBolt implements IRichBolt {
             switch (response.getStatus()) {
                 case OK_200:
                     handleOkResponse(response);
+                    break;
                 case MOVED_PERMANENTLY_301:
                     handleMovedPermanently(response);
+                    break;
                 case FOUND_302:
                     notDownloadingLogReason("Temporary redirects not supported");
+                    break;
                 case NOT_MODIFIED_304:
                     handleNotModified(document);
+                    break;
                 default:
                     notDownloadingLogReason("Request or server error, or unsupported response code");
             }
@@ -91,7 +95,7 @@ public class CrawlerBolt implements IRichBolt {
         if (response.getStatus() == HttpStatus.OK_200 && shouldCrawlUrl(response)) {
             printRetrievalStatus("Downloading");
             String contentType = getContentType(response);
-            collector.emit(new Values<>(url, contentType, response.getBody(), 1));
+            collector.emit(new Values<>(url, contentType, response.getBody(), "true"));
         } else {
             notDownloadingLogReason("HEAD suceeded but GET failed");
         }
@@ -105,7 +109,8 @@ public class CrawlerBolt implements IRichBolt {
 
         Optional<Integer> contentLength = response.getIntHeader("Content-Length");
         if (contentLength.isPresent()) {
-            if (contentLength.orElse(null) > XPathCrawler.getMaxSize()) {
+            // TODO max size
+            if (contentLength.orElse(null) > Float.POSITIVE_INFINITY) {
                 notDownloadingLogReason("Content-Length exceeds the limit.");
                 return false;
             }
@@ -154,10 +159,10 @@ public class CrawlerBolt implements IRichBolt {
     private void handleNotModified(Document document) throws MalformedURLException {
         printRetrievalStatus("Not modified");
         String contentType = document.getContentType();
-        if (contentType.equals("html") || contentType.equals("xhtml")) {
+        if (contentType.equals("HTML") || contentType.equals("XHTML")) {
             // if the document was not modified, ProcessDocumentBolt will only extract hyperlinks from HTML docs
             // no need to emit XML documents if not modified
-            collector.emit(new Values<>(url, contentType, document.getText(), 0));
+            collector.emit(new Values<>(url, contentType, document.getText(), "false"));
         }
     }
 
@@ -184,7 +189,7 @@ public class CrawlerBolt implements IRichBolt {
 
     @Override
     public void setRouter(IStreamRouter router) {
-        // Do nothing
+        this.collector.setRouter(router);
     }
 
     @Override

@@ -27,7 +27,7 @@ import java.util.UUID;
 public class ProcessDocumentBolt implements IRichBolt {
 
     private static Logger log = Logger.getLogger(ProcessDocumentBolt.class);
-    private Fields fields = new Fields();
+    private Fields fields = new Fields("url", "domain");
     private String executorId = UUID.randomUUID().toString();
     private OutputCollector collector;
 
@@ -36,14 +36,16 @@ public class ProcessDocumentBolt implements IRichBolt {
         URL url = (URL) input.getObjectByField("url");
         String contentType = input.getStringByField("contentType");
         String document = input.getStringByField("document");
-        boolean shouldWriteToDb = input.getIntegerByField("shouldWriteToDb") != 0;
+        boolean shouldWriteToDb = Objects.equals(input.getStringByField("shouldWriteToDB"), "true");
 
         switch (contentType) {
-            case "xml":
-                if (shouldWriteToDb) DBWrapper.addDocument(url, document, "xml");
-            case "html":
-            case "xhtml":
+            case "XML":
+                if (shouldWriteToDb) DBWrapper.addDocument(url, document, "XML");
+                break;
+            case "HTML":
+            case "XHTML":
                 processHtml(url, document, shouldWriteToDb);
+                break;
         }
     }
 
@@ -54,7 +56,7 @@ public class ProcessDocumentBolt implements IRichBolt {
 
         if (shouldWriteToDb && (metaRobots == null || !metaRobots.contains("noindex"))) {
             String xhtml = stringWriter.toString();
-            DBWrapper.addDocument(url, xhtml, "xhtml");
+            DBWrapper.addDocument(url, xhtml, "XHTML");
         }
 
         if (metaRobots == null || !metaRobots.contains("nofollow")) {
@@ -90,7 +92,8 @@ public class ProcessDocumentBolt implements IRichBolt {
             String href = getAttribute(anchor, "href");
             if (href != null) {
                 try {
-                    collector.emit(new Values<>(new URL(contextUrl, href)));
+                    URL resolvedUrl = new URL(contextUrl, href);
+                    collector.emit(new Values<>(resolvedUrl, resolvedUrl.getHost()));
                 } catch (MalformedURLException ignored) {
                 }
             }
@@ -142,7 +145,7 @@ public class ProcessDocumentBolt implements IRichBolt {
 
     @Override
     public void setRouter(IStreamRouter router) {
-        // Do nothing
+        this.collector.setRouter(router);
     }
 
     @Override

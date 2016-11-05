@@ -15,20 +15,28 @@
      <servlet-name>xpath</servlet-name>
      <servlet-class>edu.upenn.cis455.servlet.XPathServlet</servlet-class> 
    </servlet>
+
    <servlet>
      <servlet-name>auth</servlet-name>
      <servlet-class>edu.upenn.cis455.servlet.AuthServlet</servlet-class>
    </servlet>
+
    <servlet>
      <servlet-name>logout</servlet-name>
      <servlet-class>edu.upenn.cis455.servlet.LogoutServlet</servlet-class>
    </servlet>
-   <servlet>
+
+  <servlet>
      <servlet-name>lookup</servlet-name>
      <servlet-class>edu.upenn.cis455.servlet.LookupServlet</servlet-class>
    </servlet>
 
-   <servlet-mapping>
+  <servlet>
+    <servlet-name>create-channel</servlet-name>
+    <servlet-class>edu.upenn.cis455.servlet.CreateChannelServlet</servlet-class>
+  </servlet>
+
+  <servlet-mapping>
      <servlet-name>xpath</servlet-name>
      <url-pattern>/xpath</url-pattern>
    </servlet-mapping>
@@ -38,16 +46,19 @@
      <url-pattern>/register.jsp</url-pattern>
    </servlet-mapping>
 
-
    <servlet-mapping>
      <servlet-name>logout</servlet-name>
      <url-pattern>/logout</url-pattern>
    </servlet-mapping>
 
-
    <servlet-mapping>
      <servlet-name>lookup</servlet-name>
      <url-pattern>/lookup</url-pattern>
+   </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>create-channel</servlet-name>
+    <url-pattern>/create/*</url-pattern>
    </servlet-mapping>
 
 </web-app>

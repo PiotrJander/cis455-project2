@@ -2,44 +2,47 @@ package edu.upenn.cis455.crawler;
 
 
 import com.sleepycat.je.DatabaseException;
+import edu.upenn.cis.stormlite.Config;
+import edu.upenn.cis.stormlite.LocalCluster;
+import edu.upenn.cis.stormlite.Topology;
+import edu.upenn.cis.stormlite.TopologyBuilder;
+import edu.upenn.cis.stormlite.tuple.Fields;
+import edu.upenn.cis455.UrlFrontier;
 import edu.upenn.cis455.storage.DBWrapper;
+import org.apache.log4j.BasicConfigurator;
 
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.*;
 
 public class XPathCrawler {
 
     public static final String name = "cis455crawler";
-
     private static URL startUrl;
-    private static int maxSize;
-    private static int maxDocuments = 1000;
-    private static int visitedDocumentsCount = 0;
+    private final String URL_SPOUT = "URL_SPOUT";
+    private final String CRAWLER_BOLT = "CRAWLER_BOLT";
+    private final String PROCESS_DOCUMENT_BOLT = "PROCESS_DOCUMENT_BOLT";
+    private final String MERGE_URLS_BOLT = "MERGE_URLS_BOLT";
 
-    private LinkedList<URL> frontier = new LinkedList<>();
-    private Set<URL> visited = new HashSet<>();
-
-    private XPathCrawler(URL start) {
-        frontier.add(start);
-    }
-
-    XPathCrawler() {
-    }
-
-    private static void incrementVisitedDocumentCount() {
-        visitedDocumentsCount++;
-    }
-
-    static int getMaxSize() {
-        return maxSize;
-    }
+//    private static int maxSize;
+//    private static int maxDocuments = 1000;
+//    private static int visitedDocumentsCount = 0;
+//
+//    public static void incrementVisitedDocumentCount() {
+//        visitedDocumentsCount++;
+//    }
+//
+//    static int getMaxSize() {
+//        return maxSize;
+//    }
 
     public static void main(String[] args) {
+        BasicConfigurator.configure();
         parseArguments(args);
 
-        XPathCrawler crawler = new XPathCrawler(startUrl);
+        UrlFrontier.INSTANCE.add(startUrl);
+        UrlFrontier.INSTANCE.add(startUrl);
+        XPathCrawler crawler = new XPathCrawler();
         crawler.crawl();
     }
 
@@ -64,11 +67,11 @@ public class XPathCrawler {
             usage();
         }
 
-        maxSize = parseInt(args[2]) << 20;  // arg max size given in megabytes, convert to bytes
-
-        if (args.length == 4) {
-            maxDocuments = parseInt(args[3]);
-        }
+//        maxSize = parseInt(args[2]) << 20;  // arg max size given in megabytes, convert to bytes
+//
+//        if (args.length == 4) {
+//            maxDocuments = parseInt(args[3]);
+//        }
     }
 
     private static int parseInt(String s) {
@@ -86,24 +89,31 @@ public class XPathCrawler {
     }
 
     private void crawl() {
-        while (visitedDocumentsCount < maxDocuments && !frontier.isEmpty()) {
-            URL next = frontier.remove();
-            CrawlTask task = new CrawlTask(next);
-            List<URL> newUrls = task.run();
+        Config config = new Config();
+        TopologyBuilder builder = new TopologyBuilder();
 
-            // in the special case that crawl delay hasn't elapsed yet, we move the URL
-            // to the end of the queue; and we don't add it to visited
-            if (newUrls.size() > 0 && !Objects.equals(newUrls.get(0), next)) {
-                incrementVisitedDocumentCount();
-                visited.add(next);
-            }
+        builder.setSpout(URL_SPOUT, new UrlSpout(), 1);
+        builder.setBolt(CRAWLER_BOLT, new CrawlerBolt(), 1).fieldsGrouping(URL_SPOUT, new Fields("domain"));
+        builder.setBolt(PROCESS_DOCUMENT_BOLT, new ProcessDocumentBolt(), 1).shuffleGrouping(CRAWLER_BOLT);
+        builder.setBolt(MERGE_URLS_BOLT, new MergeUrlsBolt(), 1).fieldsGrouping(PROCESS_DOCUMENT_BOLT, new Fields("domain"));
 
-            for (URL url : newUrls) {
-                if (!visited.contains(url)) {
-                    frontier.add(url);
-                }
-            }
+        LocalCluster cluster = new LocalCluster();
+        Topology topo = builder.createTopology();
+
+        cluster.submitTopology("crawler", config, builder.createTopology());
+
+        // TODO maybe handle interrupt signal here?
+
+        try {
+            Thread.sleep(10000000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
+
+//        cluster.killTopology("crawler");
+//        cluster.shutdown();
+//        System.exit(0);
+
         DBWrapper.close();
     }
 }
