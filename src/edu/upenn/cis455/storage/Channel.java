@@ -1,6 +1,7 @@
 package edu.upenn.cis455.storage;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sleepycat.persist.model.Entity;
 import com.sleepycat.persist.model.PrimaryKey;
 
 import java.io.IOException;
@@ -8,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+@Entity
 public class Channel {
 
     @PrimaryKey

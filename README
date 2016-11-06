@@ -2,7 +2,12 @@ Full name:  Piotr Jander
 SEAS login: piotr@sas.upenn.edu
 
 Which features did you implement? 
-  Entire assignment, except I didn't do the unit tests.
+  My crawler uses Stormlite.
+  I didn't complete the xpath engine. I only did tokenization of the xpath, as demonstrated in a unit test.
+  Because of lack of XPath engine, I didn't implement a bolt which matches documents against channel.
+  However, I did add logic to the database which would allow to store channels add associate them with users,
+  again, as evident from unit tests.
+  I added all required Servlet endpoints, but due to the lack of channels logic, some of them have dummy implementations.
 
 Did you complete any extra-credit tasks? If so, which ones?
   No.

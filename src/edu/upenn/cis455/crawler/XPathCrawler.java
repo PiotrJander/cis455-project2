@@ -7,7 +7,6 @@ import edu.upenn.cis.stormlite.LocalCluster;
 import edu.upenn.cis.stormlite.Topology;
 import edu.upenn.cis.stormlite.TopologyBuilder;
 import edu.upenn.cis.stormlite.tuple.Fields;
-import edu.upenn.cis455.UrlFrontier;
 import edu.upenn.cis455.storage.DBWrapper;
 import org.apache.log4j.BasicConfigurator;
 

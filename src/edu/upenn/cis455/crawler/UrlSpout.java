@@ -7,7 +7,6 @@ import edu.upenn.cis.stormlite.spout.IRichSpout;
 import edu.upenn.cis.stormlite.spout.SpoutOutputCollector;
 import edu.upenn.cis.stormlite.tuple.Fields;
 import edu.upenn.cis.stormlite.tuple.Values;
-import edu.upenn.cis455.UrlFrontier;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 

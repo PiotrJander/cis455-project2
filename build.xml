@@ -63,11 +63,25 @@
         </javac>
     </target>
 
-    <target name="compile-crawler" depends="compile-storage,compile-http-client,compile-robotstxt"
+    <target name="compile-stormlite" description="Compiles the Stormlite">
+        <mkdir dir="${classes.dir}"/>
+        <javac srcdir="src/edu/upenn/cis/stormlite" destdir="${classes.dir}" debug="on" deprecation="off" optimize="on"
+               includeAntRuntime="no">
+            <classpath>
+                <!--<pathelement path="src/edu/upenn/cis/stormlite" />-->
+                <fileset dir="${inputlib.dir}">
+                    <include name="*.jar"/>
+                </fileset>
+            </classpath>
+        </javac>
+    </target>
+
+    <target name="compile-crawler" depends="compile-storage,compile-http-client,compile-robotstxt,compile-stormlite"
             description="Compiles the crawler">
         <mkdir dir="${classes.dir}"/>
         <javac srcdir="src/edu/upenn/cis455/crawler" destdir="${classes.dir}" debug="on" deprecation="off" optimize="on" includeAntRuntime="no">
             <classpath>
+                <!--<pathelement path="src/edu/upenn/cis/stormlite" />-->
                 <fileset dir="${inputlib.dir}">
                     <include name="*.jar"/>
                 </fileset>

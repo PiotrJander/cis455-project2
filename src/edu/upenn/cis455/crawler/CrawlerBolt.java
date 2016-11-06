@@ -8,7 +8,6 @@ import edu.upenn.cis.stormlite.routers.IStreamRouter;
 import edu.upenn.cis.stormlite.tuple.Fields;
 import edu.upenn.cis.stormlite.tuple.Tuple;
 import edu.upenn.cis.stormlite.tuple.Values;
-import edu.upenn.cis455.UrlFrontier;
 import edu.upenn.cis455.httpclient.HttpStatus;
 import edu.upenn.cis455.httpclient.Request;
 import edu.upenn.cis455.httpclient.RequestError;

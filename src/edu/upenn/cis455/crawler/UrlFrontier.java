@@ -1,4 +1,4 @@
-package edu.upenn.cis455;
+package edu.upenn.cis455.crawler;
 
 import java.net.URL;
 import java.util.List;
